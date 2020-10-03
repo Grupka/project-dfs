@@ -1,0 +1,17 @@
+syntax = 'proto3';
+
+enum PeerType {
+  CLIENT = 0;
+  STORAGE_SERVER = 1;
+  NAMING_SERVER = 2;
+}
+
+message PeerInfo {
+  PeerType peerType = 1;
+  string name = 2;
+}
+
+
+
+
+

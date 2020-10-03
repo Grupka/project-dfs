@@ -1,0 +1,15 @@
+syntax = 'proto3';
+
+service KeepAlive {
+  rpc Check(KeepAliveRequest) returns (KeepAliveResponse) {}
+}
+
+message KeepAliveRequest {
+  string message = 1;
+}
+
+message KeepAliveResponse {
+  string message = 2;
+}
+
+

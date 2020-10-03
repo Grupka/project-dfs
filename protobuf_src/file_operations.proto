@@ -1,0 +1,126 @@
+syntax = 'proto3';
+
+service FileOperationsManager {
+  rpc Initialize(InitializeArgs) returns (InitializeResult) {};
+  rpc CreateFile(CreateFileArgs) returns (CreateFileResult) {};
+  rpc ReadFile(ReadFileArgs) returns (ReadFileResult) {};
+  rpc WriteFile(WriteFileArgs) returns (WriteFileResult) {};
+  rpc DeleteFile(DeleteFileArgs) returns (DeleteFileResult) {};
+  rpc GetFileInfo(GetFileInfoArgs) returns (GetFileInfoResult) {};
+  rpc CopyFile(CopyFileArgs) returns (CopyFileResult) {};
+  rpc MoveFile(MoveFileArgs) returns (MoveFileResult) {};
+  // cd analog. Client-only thing.
+  // rpc OpenDirectory(OpenDirectoryArgs) returns (OpenDirectoryResult) {};
+  rpc ReadDirectory(ReadDirectoryArgs) returns (ReadDirectoryResult) {};
+  rpc MakeDirectory(MakeDirectoryArgs) returns (MakeDirectoryResult) {};
+  rpc DeleteDirectory(DeleteDirectoryArgs) returns (DeleteDirectoryResult) {};
+}
+
+// ---
+
+message InitializeArgs {
+}
+
+message InitializeResult {
+  int64 availableSize = 1;
+}
+
+// ---
+
+message CreateFileArgs {
+
+}
+
+message CreateFileResult {
+
+}
+
+// ---
+
+message ReadFileArgs {
+
+}
+
+message ReadFileResult {
+
+}
+
+// ---
+
+message WriteFileArgs {
+
+}
+
+message WriteFileResult {
+
+}
+
+// ---
+
+message DeleteFileArgs {
+
+}
+
+message DeleteFileResult {
+
+}
+
+// ---
+
+message GetFileInfoArgs {
+
+}
+
+message GetFileInfoResult {
+
+}
+
+// ---
+
+message CopyFileArgs {
+
+}
+
+message CopyFileResult {
+
+}
+
+// ---
+
+message MoveFileArgs {
+
+}
+
+message MoveFileResult {
+
+}
+
+// ---
+
+message ReadDirectoryArgs {
+
+}
+
+message ReadDirectoryResult {
+
+}
+
+// ---
+
+message MakeDirectoryArgs {
+
+}
+
+message MakeDirectoryResult {
+
+}
+
+// ---
+
+message DeleteDirectoryArgs {
+
+}
+
+message DeleteDirectoryResult {
+
+}
