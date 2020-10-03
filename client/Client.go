@@ -22,14 +22,16 @@ func main() {
 	checkError(err)
 	conn, err := net.DialTCP("tcp", nil, tcpAddr) // used by clients to establish connection
 	checkError(err)
+
+	reader := bufio.NewReader(os.Stdin)
+
 	for {
-		reader := bufio.NewReader(os.Stdin)
 		fmt.Print(">> ")
 		text, _ := reader.ReadString('\n')
 
 		fmt.Fprintf(conn, text+"\n") // send
 
-		message, _ := bufio.NewReader(conn).ReadString('\n') //receive
+		message, _ := bufio.NewReader(conn).ReadString('\n') // receive
 		fmt.Print("->: " + message)
 		if strings.TrimSpace(string(text)) == "STOP" {
 			fmt.Println("TCP client exiting...")

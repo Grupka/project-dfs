@@ -15,18 +15,7 @@ func checkError(err error) {
 	}
 }
 
-func main() {
-	arguments := os.Args
-	port := ":" + arguments[1]
-	tcpAddr, err := net.ResolveTCPAddr("tcp4", port)
-	checkError(err)
-	listener, err := net.ListenTCP("tcp", tcpAddr)
-	checkError(err)
-
-	// accept an incoming connection
-	conn, err := listener.Accept()
-	checkError(err)
-
+func handle(conn net.Conn) {
 	for {
 		buf, err := bufio.NewReader(conn).ReadString('\n') // receive
 		if err != nil {
@@ -37,9 +26,30 @@ func main() {
 			fmt.Println("Exiting TCP server!")
 			return
 		}
-		fmt.Print("-> ", string(buf))
+		fmt.Print("-> ", buf)
 
 		conn.Write([]byte("success")) //send
 	}
-	listener.Close()
+}
+
+func main() {
+	arguments := os.Args
+	port := ":" + arguments[1]
+	tcpAddr, err := net.ResolveTCPAddr("tcp4", port)
+	checkError(err)
+	listener, err := net.ListenTCP("tcp", tcpAddr)
+	checkError(err)
+
+	println("Listening on " + port)
+
+	// Accept connection infinitely
+	for {
+		// accept an incoming connection
+		conn, err := listener.Accept()
+		checkError(err)
+		go handle(conn)
+	}
+
+	err = listener.Close()
+	checkError(err)
 }
