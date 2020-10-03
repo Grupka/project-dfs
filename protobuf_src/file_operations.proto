@@ -1,4 +1,7 @@
 syntax = 'proto3';
+package pb;
+option go_package = ".;pb";
+
 
 service FileOperationsManager {
   rpc Initialize(InitializeArgs) returns (InitializeResult) {};
