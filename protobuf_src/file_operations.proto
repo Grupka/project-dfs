@@ -8,122 +8,131 @@ service FileOperationsManager {
   rpc CreateFile(CreateFileArgs) returns (CreateFileResult) {};
   rpc ReadFile(ReadFileArgs) returns (ReadFileResult) {};
   rpc WriteFile(WriteFileArgs) returns (WriteFileResult) {};
-  rpc DeleteFile(DeleteFileArgs) returns (DeleteFileResult) {};
+  rpc Remove(RemoveArgs) returns (RemoveResult) {};
   rpc GetFileInfo(GetFileInfoArgs) returns (GetFileInfoResult) {};
-  rpc CopyFile(CopyFileArgs) returns (CopyFileResult) {};
-  rpc MoveFile(MoveFileArgs) returns (MoveFileResult) {};
-  // cd analog. Client-only thing.
-  // rpc OpenDirectory(OpenDirectoryArgs) returns (OpenDirectoryResult) {};
+  rpc Copy(CopyArgs) returns (CopyResult) {};
+  rpc Move(MoveArgs) returns (MoveResult) {};
   rpc ReadDirectory(ReadDirectoryArgs) returns (ReadDirectoryResult) {};
   rpc MakeDirectory(MakeDirectoryArgs) returns (MakeDirectoryResult) {};
-  rpc DeleteDirectory(DeleteDirectoryArgs) returns (DeleteDirectoryResult) {};
 }
 
-// ---
+enum ErrorCode {
+  OK = 0;
+  INITERROR = 1;
+  CREATEERROR = 2;
+  READERROR = 3;
+  WRITEERROR = 4;
+  RMERROR = 5;
+  INFERROR = 6;
+  CPERROR = 7;
+  MVERROR = 8;
+  MKDIRERROR = 9;
+}
 
 message InitializeArgs {
 }
 
 message InitializeResult {
-  int64 availableSize = 1;
+  ErrorCode errorCode = 1;
+  int64 availableSize = 2;
 }
 
 // ---
 
 message CreateFileArgs {
-
+  string path = 1;
 }
 
 message CreateFileResult {
-
+  ErrorCode errorCode = 1;
 }
 
 // ---
 
 message ReadFileArgs {
-
+  string path = 1;
+  int64 offset = 2;
+  int64 count = 3;
 }
 
 message ReadFileResult {
-
+  ErrorCode errorCode = 1;
+  bytes buffer = 2;
 }
 
 // ---
 
 message WriteFileArgs {
-
+  string path = 1;
+  int64 offset = 2;
+  int64 count = 3;
+  bytes buffer = 4;
 }
 
 message WriteFileResult {
-
+  ErrorCode errorCode = 1;
 }
 
 // ---
 
-message DeleteFileArgs {
-
+message RemoveArgs {
+  string path = 1;
 }
 
-message DeleteFileResult {
-
+message RemoveResult {
+  ErrorCode errorCode = 1;
 }
 
 // ---
 
 message GetFileInfoArgs {
-
+  string path = 1;
 }
 
 message GetFileInfoResult {
-
+  ErrorCode errorCode = 1;
+  bytes buffer = 2;
 }
 
 // ---
 
-message CopyFileArgs {
-
+message CopyArgs {
+  string path = 1;
+  string newPath = 2;
 }
 
-message CopyFileResult {
-
+message CopyResult {
+  ErrorCode errorCode = 1;
 }
 
 // ---
 
-message MoveFileArgs {
-
+message MoveArgs {
+  string path = 1;
+  string newPath = 2;
 }
 
-message MoveFileResult {
-
+message MoveResult {
+  ErrorCode errorCode = 1;
 }
 
 // ---
 
 message ReadDirectoryArgs {
-
+  string path = 1;
 }
 
 message ReadDirectoryResult {
-
+  ErrorCode errorCode = 1;
+  bytes buffer = 2;
 }
 
 // ---
 
 message MakeDirectoryArgs {
-
+  string path = 1;
 }
 
 message MakeDirectoryResult {
-
-}
-
-// ---
-
-message DeleteDirectoryArgs {
-
-}
-
-message DeleteDirectoryResult {
-
+  ErrorCode errorCode = 1;
 }

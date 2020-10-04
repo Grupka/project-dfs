@@ -11,17 +11,14 @@ import (
 
 func CheckError(err error) {
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Fatal error: %s", err.Error())
+		fmt.Errorf("error serving gRPC server %s", err)
 		os.Exit(1)
 	}
 }
 
 func main() {
-	//arguments := os.Args
-	//serverAddr := arguments[1] // "host:port" as a string
 	serverAddr := "localhost:5678"
 
-	//var conn *grpc.ClientConn
 	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
 	CheckError(err)
 

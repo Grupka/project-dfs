@@ -93,5 +93,5 @@ var _KeepAlive_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "common.proto",
+	Metadata: "keep_alive.proto",
 }
