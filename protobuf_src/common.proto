@@ -12,7 +12,7 @@ message KeepAliveRequest {
 }
 
 message KeepAliveResponse {
-  string message = 2;
+  string message = 1;
 }
 
 

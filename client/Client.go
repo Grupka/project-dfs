@@ -1,14 +1,15 @@
 package main
 
 import (
-	"bufio"
+	"../pb"
+	"context"
 	"fmt"
-	"net"
+	"google.golang.org/grpc"
+	"log"
 	"os"
-	"strings"
 )
 
-func checkError(err error) {
+func CheckError(err error) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Fatal error: %s", err.Error())
 		os.Exit(1)
@@ -16,32 +17,17 @@ func checkError(err error) {
 }
 
 func main() {
-	arguments := os.Args
-	serverAddr := arguments[1] // "host:port" as a string
-	tcpAddr, err := net.ResolveTCPAddr("tcp4", serverAddr)
-	checkError(err)
-	conn, err := net.DialTCP("tcp", nil, tcpAddr) // used by clients to establish connection
-	checkError(err)
+	//arguments := os.Args
+	//serverAddr := arguments[1] // "host:port" as a string
+	serverAddr := "localhost:5678"
 
-	reader := bufio.NewReader(os.Stdin)
+	//var conn *grpc.ClientConn
+	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	CheckError(err)
 
-	for {
-		fmt.Print(">> ")
-		text, _ := reader.ReadString('\n')
+	aliveClient := pb.NewKeepAliveClient(conn)
 
-		fmt.Fprintf(conn, text+"\n") // send
-
-		message, _ := bufio.NewReader(conn).ReadString('\n') // receive
-		fmt.Print("->: " + message)
-		if strings.TrimSpace(string(text)) == "STOP" {
-			fmt.Println("TCP client exiting...")
-			return
-		}
-	}
-
-	// receive a message
-	//var buf [255]byte
-	//_, err = conn.Read(buf[0:])
-	//checkError(err)
-	//fmt.Println(buf)
+	response, err := aliveClient.Check(context.Background(), &pb.KeepAliveRequest{Message: "Hello From Client!"})
+	CheckError(err)
+	log.Printf("Response from server: %s", response.GetMessage())
 }

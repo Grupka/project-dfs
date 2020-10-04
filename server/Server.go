@@ -1,14 +1,16 @@
 package main
 
 import (
+	"../pb"
 	"bufio"
 	"fmt"
+	"google.golang.org/grpc"
 	"net"
 	"os"
 	"strings"
 )
 
-func checkError(err error) {
+func CheckError(err error) {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Fatal error: %s", err.Error())
 		os.Exit(1)
@@ -33,23 +35,21 @@ func handle(conn net.Conn) {
 }
 
 func main() {
-	arguments := os.Args
-	port := ":" + arguments[1]
-	tcpAddr, err := net.ResolveTCPAddr("tcp4", port)
-	checkError(err)
-	listener, err := net.ListenTCP("tcp", tcpAddr)
-	checkError(err)
-
+	//arguments := os.Args
+	//port := ":" + arguments[1]
+	port := ":5678"
+	listener, err := net.Listen("tcp", port)
+	CheckError(err)
 	println("Listening on " + port)
 
-	// Accept connection infinitely
-	for {
-		// accept an incoming connection
-		conn, err := listener.Accept()
-		checkError(err)
-		go handle(conn)
-	}
+	//aliveServer := NewKeepAliveServer()
+	aliveServer := KeepAliveServerImpl{}
+	grpcServer := grpc.NewServer()
+	pb.RegisterKeepAliveServer(grpcServer, &aliveServer)
 
-	err = listener.Close()
-	checkError(err)
+	err = grpcServer.Serve(listener)
+	if err != nil {
+		fmt.Errorf("error serving gRPC server %s", err)
+		os.Exit(1)
+	}
 }
