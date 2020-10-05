@@ -14,14 +14,14 @@ services:
     networks:
       - main
     environment:
-      NAMING_SERVER_ADDRESS: 'naming_server:5678'
+      NAMING_SERVER_ADDRESS: 'naming-server:5678'
 
   storage-server-2:
     image: 'storage_server:latest'
     networks:
       - main
     environment:
-      NAMING_SERVER_ADDRESS: 'naming_server:5678'
+      NAMING_SERVER_ADDRESS: 'naming-server:5678'
 
 
 
