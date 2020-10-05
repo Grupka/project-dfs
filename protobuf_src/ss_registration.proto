@@ -1,0 +1,21 @@
+syntax = 'proto3';
+package pb;
+option go_package = ".;pb";
+
+
+service Registration {
+  rpc Register(RegRequest) returns (RegResponse) {}
+}
+
+message RegRequest {
+  string serverAddress = 1;
+}
+
+enum Status {
+  ACCEPT = 0;
+  DECLINE = 1;
+}
+
+message RegResponse {
+  string Status = 1;
+}

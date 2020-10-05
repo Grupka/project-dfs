@@ -21,15 +21,12 @@ type FileOperationsManagerClient interface {
 	CreateFile(ctx context.Context, in *CreateFileArgs, opts ...grpc.CallOption) (*CreateFileResult, error)
 	ReadFile(ctx context.Context, in *ReadFileArgs, opts ...grpc.CallOption) (*ReadFileResult, error)
 	WriteFile(ctx context.Context, in *WriteFileArgs, opts ...grpc.CallOption) (*WriteFileResult, error)
-	DeleteFile(ctx context.Context, in *DeleteFileArgs, opts ...grpc.CallOption) (*DeleteFileResult, error)
+	Remove(ctx context.Context, in *RemoveArgs, opts ...grpc.CallOption) (*RemoveResult, error)
 	GetFileInfo(ctx context.Context, in *GetFileInfoArgs, opts ...grpc.CallOption) (*GetFileInfoResult, error)
-	CopyFile(ctx context.Context, in *CopyFileArgs, opts ...grpc.CallOption) (*CopyFileResult, error)
-	MoveFile(ctx context.Context, in *MoveFileArgs, opts ...grpc.CallOption) (*MoveFileResult, error)
-	// cd analog. Client-only thing.
-	// rpc OpenDirectory(OpenDirectoryArgs) returns (OpenDirectoryResult) {};
+	Copy(ctx context.Context, in *CopyArgs, opts ...grpc.CallOption) (*CopyResult, error)
+	Move(ctx context.Context, in *MoveArgs, opts ...grpc.CallOption) (*MoveResult, error)
 	ReadDirectory(ctx context.Context, in *ReadDirectoryArgs, opts ...grpc.CallOption) (*ReadDirectoryResult, error)
 	MakeDirectory(ctx context.Context, in *MakeDirectoryArgs, opts ...grpc.CallOption) (*MakeDirectoryResult, error)
-	DeleteDirectory(ctx context.Context, in *DeleteDirectoryArgs, opts ...grpc.CallOption) (*DeleteDirectoryResult, error)
 }
 
 type fileOperationsManagerClient struct {
@@ -76,9 +73,9 @@ func (c *fileOperationsManagerClient) WriteFile(ctx context.Context, in *WriteFi
 	return out, nil
 }
 
-func (c *fileOperationsManagerClient) DeleteFile(ctx context.Context, in *DeleteFileArgs, opts ...grpc.CallOption) (*DeleteFileResult, error) {
-	out := new(DeleteFileResult)
-	err := c.cc.Invoke(ctx, "/pb.FileOperationsManager/DeleteFile", in, out, opts...)
+func (c *fileOperationsManagerClient) Remove(ctx context.Context, in *RemoveArgs, opts ...grpc.CallOption) (*RemoveResult, error) {
+	out := new(RemoveResult)
+	err := c.cc.Invoke(ctx, "/pb.FileOperationsManager/Remove", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -94,18 +91,18 @@ func (c *fileOperationsManagerClient) GetFileInfo(ctx context.Context, in *GetFi
 	return out, nil
 }
 
-func (c *fileOperationsManagerClient) CopyFile(ctx context.Context, in *CopyFileArgs, opts ...grpc.CallOption) (*CopyFileResult, error) {
-	out := new(CopyFileResult)
-	err := c.cc.Invoke(ctx, "/pb.FileOperationsManager/CopyFile", in, out, opts...)
+func (c *fileOperationsManagerClient) Copy(ctx context.Context, in *CopyArgs, opts ...grpc.CallOption) (*CopyResult, error) {
+	out := new(CopyResult)
+	err := c.cc.Invoke(ctx, "/pb.FileOperationsManager/Copy", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *fileOperationsManagerClient) MoveFile(ctx context.Context, in *MoveFileArgs, opts ...grpc.CallOption) (*MoveFileResult, error) {
-	out := new(MoveFileResult)
-	err := c.cc.Invoke(ctx, "/pb.FileOperationsManager/MoveFile", in, out, opts...)
+func (c *fileOperationsManagerClient) Move(ctx context.Context, in *MoveArgs, opts ...grpc.CallOption) (*MoveResult, error) {
+	out := new(MoveResult)
+	err := c.cc.Invoke(ctx, "/pb.FileOperationsManager/Move", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -130,15 +127,6 @@ func (c *fileOperationsManagerClient) MakeDirectory(ctx context.Context, in *Mak
 	return out, nil
 }
 
-func (c *fileOperationsManagerClient) DeleteDirectory(ctx context.Context, in *DeleteDirectoryArgs, opts ...grpc.CallOption) (*DeleteDirectoryResult, error) {
-	out := new(DeleteDirectoryResult)
-	err := c.cc.Invoke(ctx, "/pb.FileOperationsManager/DeleteDirectory", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // FileOperationsManagerServer is the server API for FileOperationsManager service.
 // All implementations must embed UnimplementedFileOperationsManagerServer
 // for forward compatibility
@@ -147,15 +135,12 @@ type FileOperationsManagerServer interface {
 	CreateFile(context.Context, *CreateFileArgs) (*CreateFileResult, error)
 	ReadFile(context.Context, *ReadFileArgs) (*ReadFileResult, error)
 	WriteFile(context.Context, *WriteFileArgs) (*WriteFileResult, error)
-	DeleteFile(context.Context, *DeleteFileArgs) (*DeleteFileResult, error)
+	Remove(context.Context, *RemoveArgs) (*RemoveResult, error)
 	GetFileInfo(context.Context, *GetFileInfoArgs) (*GetFileInfoResult, error)
-	CopyFile(context.Context, *CopyFileArgs) (*CopyFileResult, error)
-	MoveFile(context.Context, *MoveFileArgs) (*MoveFileResult, error)
-	// cd analog. Client-only thing.
-	// rpc OpenDirectory(OpenDirectoryArgs) returns (OpenDirectoryResult) {};
+	Copy(context.Context, *CopyArgs) (*CopyResult, error)
+	Move(context.Context, *MoveArgs) (*MoveResult, error)
 	ReadDirectory(context.Context, *ReadDirectoryArgs) (*ReadDirectoryResult, error)
 	MakeDirectory(context.Context, *MakeDirectoryArgs) (*MakeDirectoryResult, error)
-	DeleteDirectory(context.Context, *DeleteDirectoryArgs) (*DeleteDirectoryResult, error)
 	mustEmbedUnimplementedFileOperationsManagerServer()
 }
 
@@ -175,26 +160,23 @@ func (UnimplementedFileOperationsManagerServer) ReadFile(context.Context, *ReadF
 func (UnimplementedFileOperationsManagerServer) WriteFile(context.Context, *WriteFileArgs) (*WriteFileResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WriteFile not implemented")
 }
-func (UnimplementedFileOperationsManagerServer) DeleteFile(context.Context, *DeleteFileArgs) (*DeleteFileResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteFile not implemented")
+func (UnimplementedFileOperationsManagerServer) Remove(context.Context, *RemoveArgs) (*RemoveResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Remove not implemented")
 }
 func (UnimplementedFileOperationsManagerServer) GetFileInfo(context.Context, *GetFileInfoArgs) (*GetFileInfoResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFileInfo not implemented")
 }
-func (UnimplementedFileOperationsManagerServer) CopyFile(context.Context, *CopyFileArgs) (*CopyFileResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CopyFile not implemented")
+func (UnimplementedFileOperationsManagerServer) Copy(context.Context, *CopyArgs) (*CopyResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Copy not implemented")
 }
-func (UnimplementedFileOperationsManagerServer) MoveFile(context.Context, *MoveFileArgs) (*MoveFileResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MoveFile not implemented")
+func (UnimplementedFileOperationsManagerServer) Move(context.Context, *MoveArgs) (*MoveResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Move not implemented")
 }
 func (UnimplementedFileOperationsManagerServer) ReadDirectory(context.Context, *ReadDirectoryArgs) (*ReadDirectoryResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReadDirectory not implemented")
 }
 func (UnimplementedFileOperationsManagerServer) MakeDirectory(context.Context, *MakeDirectoryArgs) (*MakeDirectoryResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MakeDirectory not implemented")
-}
-func (UnimplementedFileOperationsManagerServer) DeleteDirectory(context.Context, *DeleteDirectoryArgs) (*DeleteDirectoryResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteDirectory not implemented")
 }
 func (UnimplementedFileOperationsManagerServer) mustEmbedUnimplementedFileOperationsManagerServer() {}
 
@@ -281,20 +263,20 @@ func _FileOperationsManager_WriteFile_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FileOperationsManager_DeleteFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteFileArgs)
+func _FileOperationsManager_Remove_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveArgs)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FileOperationsManagerServer).DeleteFile(ctx, in)
+		return srv.(FileOperationsManagerServer).Remove(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/pb.FileOperationsManager/DeleteFile",
+		FullMethod: "/pb.FileOperationsManager/Remove",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FileOperationsManagerServer).DeleteFile(ctx, req.(*DeleteFileArgs))
+		return srv.(FileOperationsManagerServer).Remove(ctx, req.(*RemoveArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -317,38 +299,38 @@ func _FileOperationsManager_GetFileInfo_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FileOperationsManager_CopyFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CopyFileArgs)
+func _FileOperationsManager_Copy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CopyArgs)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FileOperationsManagerServer).CopyFile(ctx, in)
+		return srv.(FileOperationsManagerServer).Copy(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/pb.FileOperationsManager/CopyFile",
+		FullMethod: "/pb.FileOperationsManager/Copy",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FileOperationsManagerServer).CopyFile(ctx, req.(*CopyFileArgs))
+		return srv.(FileOperationsManagerServer).Copy(ctx, req.(*CopyArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FileOperationsManager_MoveFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MoveFileArgs)
+func _FileOperationsManager_Move_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MoveArgs)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(FileOperationsManagerServer).MoveFile(ctx, in)
+		return srv.(FileOperationsManagerServer).Move(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/pb.FileOperationsManager/MoveFile",
+		FullMethod: "/pb.FileOperationsManager/Move",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FileOperationsManagerServer).MoveFile(ctx, req.(*MoveFileArgs))
+		return srv.(FileOperationsManagerServer).Move(ctx, req.(*MoveArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -389,24 +371,6 @@ func _FileOperationsManager_MakeDirectory_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
-func _FileOperationsManager_DeleteDirectory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteDirectoryArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(FileOperationsManagerServer).DeleteDirectory(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pb.FileOperationsManager/DeleteDirectory",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(FileOperationsManagerServer).DeleteDirectory(ctx, req.(*DeleteDirectoryArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var _FileOperationsManager_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "pb.FileOperationsManager",
 	HandlerType: (*FileOperationsManagerServer)(nil),
@@ -428,20 +392,20 @@ var _FileOperationsManager_serviceDesc = grpc.ServiceDesc{
 			Handler:    _FileOperationsManager_WriteFile_Handler,
 		},
 		{
-			MethodName: "DeleteFile",
-			Handler:    _FileOperationsManager_DeleteFile_Handler,
+			MethodName: "Remove",
+			Handler:    _FileOperationsManager_Remove_Handler,
 		},
 		{
 			MethodName: "GetFileInfo",
 			Handler:    _FileOperationsManager_GetFileInfo_Handler,
 		},
 		{
-			MethodName: "CopyFile",
-			Handler:    _FileOperationsManager_CopyFile_Handler,
+			MethodName: "Copy",
+			Handler:    _FileOperationsManager_Copy_Handler,
 		},
 		{
-			MethodName: "MoveFile",
-			Handler:    _FileOperationsManager_MoveFile_Handler,
+			MethodName: "Move",
+			Handler:    _FileOperationsManager_Move_Handler,
 		},
 		{
 			MethodName: "ReadDirectory",
@@ -450,10 +414,6 @@ var _FileOperationsManager_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MakeDirectory",
 			Handler:    _FileOperationsManager_MakeDirectory_Handler,
-		},
-		{
-			MethodName: "DeleteDirectory",
-			Handler:    _FileOperationsManager_DeleteDirectory_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
