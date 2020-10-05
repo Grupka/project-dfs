@@ -8,6 +8,27 @@ import (
 	"os"
 )
 
+type NamingServerMetadata struct {
+	StorageAddresses map[string]string // key:value = serverAlias:serverAddress
+	NetworkAddress   string            // to store network ip + mask
+	Mask             string
+	LocalAddress     string
+}
+
+func initMetadata() *NamingServerMetadata {
+
+	ip := GetLocalIP()
+	port := "5678"
+	address := ip + ":" + port
+
+	return &NamingServerMetadata{
+		StorageAddresses: make(map[string]string),
+		NetworkAddress:   "",
+		Mask:             "",
+		LocalAddress:     address,
+	}
+}
+
 func CheckError(err error) {
 	if err != nil {
 		fmt.Errorf("error serving gRPC server %s", err)
@@ -33,17 +54,18 @@ func GetLocalIP() string {
 
 func main() {
 
-	ip := GetLocalIP()
-	port := "5678"
-	localAddress := ip + ":" + port
-	listener, err := net.Listen("tcp", ":"+port)
-	CheckError(err)
-	println("Listening on " + port)
-	println("Local address " + localAddress)
+	metadata := initMetadata()
 
-	regController := NewRegistrationServiceController()
+	listener, err := net.Listen("tcp", metadata.LocalAddress)
+	CheckError(err)
+	println("Listening on " + metadata.LocalAddress)
+
+	regController := NewRegistrationServiceController(metadata)
 	grpcServer := grpc.NewServer()
 	pb.RegisterRegistrationServer(grpcServer, regController)
 	err = grpcServer.Serve(listener)
 	CheckError(err)
+
+	print("Storage addresses: ")
+	println(metadata.StorageAddresses)
 }

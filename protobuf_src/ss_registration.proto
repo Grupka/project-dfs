@@ -17,5 +17,5 @@ enum Status {
 }
 
 message RegResponse {
-  string Status = 1;
+  Status status = 1;
 }
