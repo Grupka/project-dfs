@@ -1,0 +1,26 @@
+FROM golang:1.15.2
+
+ENV GOROOT /usr/local/go
+ENV GOPATH /go/src/project-dfs
+
+RUN go get google.golang.org/grpc
+RUN go get github.com/monmohan/xferspdy
+RUN go get github.com/golang/glog
+RUN go get cloud.google.com/go
+RUN go get google.golang.org/api
+RUN go get github.com/googleapis/gax-go
+RUN go get golang.org/x/oauth2
+RUN go get go.opencensus.io
+RUN go get github.com/golang/groupcache
+RUN go get github.com/google/btree
+RUN go get rsc.io/binaryregexp
+RUN go get github.com/google/martian
+RUN go get gopkg.in/yaml.v2
+
+WORKDIR /go/src/project-dfs
+COPY . .
+
+RUN go get -d -v ./... || true
+RUN go build -o NamingServer naming_server/naming_server.go
+
+CMD ["NamingServer"]
