@@ -42,4 +42,4 @@ COPY . .
 RUN go get -d -v ./... || true
 RUN go build -o NamingServer naming_server/main/main.go
 
-CMD ["NamingServer"]
+CMD ["./NamingServer"]

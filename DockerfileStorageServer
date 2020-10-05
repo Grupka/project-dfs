@@ -42,4 +42,4 @@ COPY . .
 RUN go get -d -v ./... || true
 RUN go build -o StorageServer storage_server/storage_server.go
 
-CMD ["StorageServer"]
+CMD ["./StorageServer"]
