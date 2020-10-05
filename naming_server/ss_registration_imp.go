@@ -1,4 +1,4 @@
-package main
+package naming_server
 
 import (
 	"../pb"

@@ -40,6 +40,6 @@ WORKDIR /go/src/project-dfs
 COPY . .
 
 RUN go get -d -v ./... || true
-RUN go build -o NamingServer naming_server/naming_server.go
+RUN go build -o NamingServer naming_server/main/main.go
 
 CMD ["NamingServer"]

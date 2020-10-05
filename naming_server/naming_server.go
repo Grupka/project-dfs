@@ -1,4 +1,4 @@
-package main
+package naming_server
 
 import (
 	"../pb"
@@ -52,8 +52,7 @@ func GetLocalIP() string {
 	return ""
 }
 
-func main() {
-
+func Run() {
 	metadata := initMetadata()
 
 	listener, err := net.Listen("tcp", metadata.LocalAddress)
