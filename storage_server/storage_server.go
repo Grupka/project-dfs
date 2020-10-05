@@ -44,7 +44,7 @@ func main() {
 	CheckError(err)
 
 	newServer := pb.NewRegistrationClient(conn)
-	response, err := newServer.Register(context.Background(), &pb.RegRequest{ServerAddress: localAddress})
+	response, err := newServer.Register(context.Background(), &pb.RegRequest{ServerAddress: localAddress, ServerAlias: "storage01"})
 	CheckError(err)
 	log.Printf("Response from naming server: %s", response.GetStatus())
 }

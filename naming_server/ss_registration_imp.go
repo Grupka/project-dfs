@@ -19,6 +19,7 @@ func NewRegistrationServiceController(metadataParam *NamingServerMetadata) *Regi
 
 func (ctlr *RegistrationServiceController) Register(ctx context.Context, request *pb.RegRequest) (*pb.RegResponse, error) {
 	// add address of a new server to address map from metadata on the naming server
-	ctlr.metadata.StorageAddresses["server"] = request.ServerAddress
+
+	ctlr.metadata.StorageAddresses[request.ServerAlias] = request.ServerAddress
 	return &pb.RegResponse{Status: pb.Status_ACCEPT}, nil
 }
