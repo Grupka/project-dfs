@@ -41,10 +41,9 @@ func main() {
 	println("Listening on " + port)
 	println("Local address " + localAddress)
 
-	regService := NewRegistrationService()
+	regController := NewRegistrationServiceController()
 	grpcServer := grpc.NewServer()
-	pb.RegisterRegistrationServer(grpcServer, regService)
-
+	pb.RegisterRegistrationServer(grpcServer, regController)
 	err = grpcServer.Serve(listener)
 	CheckError(err)
 }
