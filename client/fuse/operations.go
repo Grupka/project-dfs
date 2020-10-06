@@ -126,15 +126,13 @@ func (node *DfsNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut
 
 // Creates a file.
 func (node *DfsNode) Create(ctx context.Context, name string, flags uint32, mode uint32, out *fuse.EntryOut) (n *fs.Inode, fh fs.FileHandle, fuseFlags uint32, errno syscall.Errno) {
-	path := node.Path + "/" + name
-
 	stable := fs.StableAttr{
 		Mode: fuse.S_IFREG,
 	}
 
 	now := time.Now().Format(time.StampNano) + "\n"
 
-	operations := NewDfsNode(path, []byte(now), map[string]*DfsNode{})
+	operations := NewDfsNode(name, []byte(now), map[string]*DfsNode{})
 	child := node.NewInode(ctx, operations, stable)
 
 	node.Children[name] = operations
@@ -144,13 +142,14 @@ func (node *DfsNode) Create(ctx context.Context, name string, flags uint32, mode
 
 // Renames a node (both files and directories).
 func (node *DfsNode) Rename(ctx context.Context, name string, newParent fs.InodeEmbedder, newName string, flags uint32) syscall.Errno {
-	newNodeNode := newParent.EmbeddedInode()
+	newParentEmbeddedNode := newParent.EmbeddedInode()
 	// TODO: replace with something more elegant?
-	newNode := *(*DfsNode)(unsafe.Pointer(newNodeNode))
+	newParentNode := *(*DfsNode)(unsafe.Pointer(newParentEmbeddedNode))
 
 	node.MvChild(name, newParent.EmbeddedInode(), newName, true)
+	node.Name = newName
 
-	newNode.Children[newName] = node.Children[name]
+	newParentNode.Children[newName] = node.Children[name]
 	delete(node.Children, name)
 
 	return 0
@@ -158,13 +157,11 @@ func (node *DfsNode) Rename(ctx context.Context, name string, newParent fs.Inode
 
 // Creates a directory.
 func (node *DfsNode) Mkdir(ctx context.Context, name string, mode uint32, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
-	path := node.Path + "/" + name
-
 	stable := fs.StableAttr{
 		Mode: fuse.S_IFDIR,
 	}
 
-	operations := NewDfsNode(path, make([]byte, 0), map[string]*DfsNode{})
+	operations := NewDfsNode(name, make([]byte, 0), map[string]*DfsNode{})
 	child := node.NewInode(ctx, operations, stable)
 
 	node.Children[name] = operations
