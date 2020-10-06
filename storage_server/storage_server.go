@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	"log"
-	"net"
 	"os"
 )
 
@@ -17,36 +16,27 @@ func CheckError(err error) {
 	}
 }
 
-func GetLocalIP() string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		return ""
-	}
-	for _, address := range addrs {
-		// check the address type and if it is not a loopback the display it
-		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
-			}
-		}
-	}
-	return ""
-}
-
 func main() {
+	// Obtain address from environment
+	address := os.Getenv("ADDRESS")
+	if address == "" {
+		address = "0.0.0.0:5678"
+		fmt.Println("ADDRESS variable not specified; falling back to", address)
+	}
 
-	ip := GetLocalIP()
-	port := "5678"
-	localAddress := ip + ":" + port
+	// Obtain naming address from environment
+	namingServerAddress := os.Getenv("NAMING_SERVER_ADDRESS")
+	if namingServerAddress == "" {
+		namingServerAddress = "localhost:5678"
+		fmt.Println("NAMING_SERVER_ADDRESS variable not specified; falling back to", namingServerAddress)
+	}
 
-	//namingServerAddr := "10.5.0.254:5678" // CHANGE TO SOME ADDRESS
-	namingServerAddr := "localhost:5678"
-
-	conn, err := grpc.Dial(namingServerAddr, grpc.WithInsecure())
+	fmt.Println("Connecting to naming server at", namingServerAddress)
+	conn, err := grpc.Dial(namingServerAddress, grpc.WithInsecure())
 	CheckError(err)
 
 	newServer := pb.NewRegistrationClient(conn)
-	response, err := newServer.Register(context.Background(), &pb.RegRequest{ServerAddress: localAddress, ServerAlias: "storage01"})
+	response, err := newServer.Register(context.Background(), &pb.RegRequest{ServerAddress: address, ServerAlias: "storage01"})
 	CheckError(err)
 	log.Printf("Response from naming server: %s", response.GetStatus())
 }
