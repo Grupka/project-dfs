@@ -8,8 +8,7 @@ service Registration {
 }
 
 message RegRequest {
-  string serverAddress = 1;
-  string serverAlias = 2;
+  string serverAlias = 1;
 }
 
 enum Status {

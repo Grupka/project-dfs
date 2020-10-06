@@ -11,6 +11,8 @@ export NAMING_SERVER_ADDRESS="localhost"
 export NAMING_SERVER_PORT="5678"
 export STORAGE_SERVER_1_PORT="1967"
 export STORAGE_SERVER_2_PORT="1968"
+export STORAGE_SERVER_1_ALIAS="storage01"
+export STORAGE_SERVER_2_ALIAS="storage02"
 
 bash -c "cd run/naming_server \
   && ADDRESS=0.0.0.0:${NAMING_SERVER_PORT} \
@@ -18,10 +20,12 @@ bash -c "cd run/naming_server \
 bash -c "sleep 1 && cd run/storage_server_1 \
   && ADDRESS=0.0.0.0:${STORAGE_SERVER_1_PORT} \
      NAMING_SERVER_ADDRESS=${NAMING_SERVER_ADDRESS}:${NAMING_SERVER_PORT} \
+     ALIAS=${STORAGE_SERVER_1_ALIAS} \
      ../../StorageServer" &
 bash -c "sleep 1 && cd run/storage_server_2 \
   && ADDRESS=0.0.0.0:${STORAGE_SERVER_2_PORT} \
      NAMING_SERVER_ADDRESS=${NAMING_SERVER_ADDRESS}:${NAMING_SERVER_PORT} \
+     ALIAS=${STORAGE_SERVER_2_ALIAS} \
      ../../StorageServer" &
 
 echo "Servers started. Type anything to stop. Don't forget to press Return in the end."

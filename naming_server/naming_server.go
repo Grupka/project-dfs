@@ -23,10 +23,13 @@ func initMetadata() *NamingServerMetadata {
 		fmt.Println("ADDRESS variable not specified; falling back to", address)
 	}
 
+	networkAddress := ""
+	mask := ""
+
 	return &NamingServerMetadata{
 		StorageAddresses: make(map[string]string),
-		NetworkAddress:   "",
-		Mask:             "",
+		NetworkAddress:   networkAddress,
+		Mask:             mask,
 		LocalAddress:     address,
 	}
 }
@@ -52,9 +55,5 @@ func Run() {
 	grpcServer := grpc.NewServer()
 	pb.RegisterRegistrationServer(grpcServer, regController)
 	err = grpcServer.Serve(listener)
-	println("successful serving")
 	CheckError(err)
-
-	println("Changed metadata: ")
-	fmt.Printf("%+v\n", metadata)
 }
