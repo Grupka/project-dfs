@@ -16,10 +16,11 @@ type NamingServerMetadata struct {
 }
 
 func initMetadata() *NamingServerMetadata {
-
-	ip := GetLocalIP()
-	port := "5678"
-	address := ip + ":" + port
+	// Obtain address from environment
+	address := os.Getenv("ADDRESS")
+	if address == "" {
+		address = "0.0.0.0:5678"
+	}
 
 	return &NamingServerMetadata{
 		StorageAddresses: make(map[string]string),
