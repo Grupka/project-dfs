@@ -1,7 +1,6 @@
 package storage_server
 
 import (
-	"../naming_server"
 	"../pb"
 	"context"
 	"fmt"
@@ -86,7 +85,7 @@ func Run() {
 		CheckError(err)
 		println("Listening on " + metadata.LocalAddress)
 
-		addController := naming_server.NewAdditionServiceController(metadata)
+		addController := NewAdditionServiceController(metadata)
 		grpcServer := grpc.NewServer()
 		pb.RegisterStorageAdditionServer(grpcServer, addController)
 		err = grpcServer.Serve(listener)

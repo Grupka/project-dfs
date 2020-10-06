@@ -2,7 +2,6 @@ package naming_server
 
 import (
 	"../pb"
-	"../storage_server"
 	"context"
 	"errors"
 	"fmt"
@@ -15,20 +14,9 @@ type RegistrationServiceController struct {
 	metadata *NamingServer
 }
 
-type AdditionServiceController struct {
-	pb.UnimplementedStorageAdditionServer
-	metadata *storage_server.StorageServer
-}
-
 //returns the pointer to the implementation
 func NewRegistrationServiceController(metadataParam *NamingServer) *RegistrationServiceController {
 	return &RegistrationServiceController{
-		metadata: metadataParam,
-	}
-}
-
-func NewAdditionServiceController(metadataParam *storage_server.StorageServer) *AdditionServiceController {
-	return &AdditionServiceController{
 		metadata: metadataParam,
 	}
 }
@@ -59,11 +47,4 @@ func (ctlr *RegistrationServiceController) Register(ctx context.Context, request
 	}
 
 	return &pb.RegResponse{Status: pb.Status_ACCEPT}, nil
-}
-
-func (ctlr *AdditionServiceController) AddStorage(ctx context.Context, request *pb.AddRequest) (*pb.AddResponse, error) {
-	// update address map on the STORAGE server
-	ctlr.metadata.SetMap(request.GetServerAlias(), request.GetServerAddress())
-
-	return &pb.AddResponse{Status: pb.Status_ACCEPT}, nil
 }
