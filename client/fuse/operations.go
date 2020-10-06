@@ -5,21 +5,35 @@ import (
 	"fmt"
 	"github.com/hanwen/go-fuse/fs"
 	"github.com/hanwen/go-fuse/fuse"
-	"log"
 	"syscall"
 	"time"
 	"unsafe"
 )
 
-type bytesFileHandle struct {
+type DfsHandle struct {
 	Node *DfsNode
 }
+
+var _ = (fs.FileReader)((*DfsHandle)(nil))
+var _ = (fs.FileWriter)((*DfsHandle)(nil))
 
 //=== General part ===//
 
 func (node *DfsNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
-	out.Size = 9999
+	out.Size = uint64(len(node.Content))
 	out.Mode = 0777
+	return 0
+}
+
+func (node *DfsNode) Unlink(ctx context.Context, name string) syscall.Errno {
+	delete(node.Children, name)
+
+	return 0
+}
+
+func (node *DfsNode) Rmdir(ctx context.Context, name string) syscall.Errno {
+	delete(node.Children, name)
+
 	return 0
 }
 
@@ -28,17 +42,17 @@ func (node *DfsNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.Att
 func (node *DfsNode) Open(ctx context.Context, flags uint32) (fh fs.FileHandle, fuseFlags uint32, errno syscall.Errno) {
 	//fmt.Println("Open:", node, "; flags =", flags)
 
-	fh = &bytesFileHandle{Node: node}
+	fh = &DfsHandle{Node: node}
 
 	// Return FOPEN_DIRECT_IO so content is not cached.
 	return fh, fuse.FOPEN_DIRECT_IO, 0
 }
 
-func (h *bytesFileHandle) Read(ctx context.Context, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
-	return h.Node.Read(ctx, dest, off)
+func (h *DfsHandle) Read(ctx context.Context, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
+	return h.Node.Read(ctx, h, dest, off)
 }
 
-func (node *DfsNode) Read(ctx context.Context, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
+func (node *DfsNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
 	//fmt.Println("Read:", fh, "; off =", off, "; ctx =", ctx)
 
 	end := off + int64(len(dest))
@@ -51,12 +65,14 @@ func (node *DfsNode) Read(ctx context.Context, dest []byte, off int64) (fuse.Rea
 	return fuse.ReadResultData(node.Content[off:end]), 0
 }
 
-func (h *bytesFileHandle) Write(ctx context.Context, data []byte, off int64) (written uint32, errno syscall.Errno) {
-	return h.Node.Write(ctx, data, off)
+func (h *DfsHandle) Write(ctx context.Context, data []byte, off int64) (written uint32, errno syscall.Errno) {
+	fmt.Println("handle Write called")
+
+	return h.Node.Write(ctx, h, data, off)
 }
 
-func (node *DfsNode) Write(ctx context.Context, data []byte, off int64) (written uint32, errno syscall.Errno) {
-	//fmt.Println("Write:", fh, "; off =", off, "; ctx =", ctx, "data =", data)
+func (node *DfsNode) Write(ctx context.Context, f fs.FileHandle, data []byte, off int64) (written uint32, errno syscall.Errno) {
+	fmt.Println("node Write called")
 
 	// Extend the content size if needed
 	end := off + int64(len(data))
@@ -75,13 +91,13 @@ func (node *DfsNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) 
 	//fmt.Println("Readdir:", node.Inode.String())
 
 	r := make([]fuse.DirEntry, 0, len(node.Children))
-	for ino, name := range node.Children {
+	for name, childNode := range node.Children {
 		d := fuse.DirEntry{
 			Name: name,
-			Ino:  ino,
+			Ino:  childNode.StableAttr().Ino,
 			// In our FS, mode is either DIRectory (fuse.S_IFDIR) or REGular file (fuse.S_IFREG).
 			// We do not support symlinks or other stuff.
-			Mode: fuse.S_IFREG,
+			Mode: childNode.Mode(),
 		}
 		r = append(r, d)
 	}
@@ -93,9 +109,11 @@ func (node *DfsNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) 
 func (node *DfsNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
 	// Check the list of files for the requested name
 	ino := uint64(0)
-	for _ino, _name := range node.Children {
+	child := (*DfsNode)(nil)
+	for _name, _node := range node.Children {
 		if _name == name {
-			ino = _ino
+			ino = _node.StableAttr().Ino
+			child = _node
 			break
 		}
 	}
@@ -105,41 +123,36 @@ func (node *DfsNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut
 		return nil, syscall.ENOENT
 	}
 
-	stable := fs.StableAttr{
-		Mode: fuse.S_IFREG,
-		// The child inode is identified by its Inode number.
-		// If multiple concurrent lookups try to find the same
-		// inode, they are deduplicated on this key.
-		Ino: ino,
-	}
-	operations := &DfsNode{Path: node.Path + "/" + name}
+	//stable := fs.StableAttr{
+	//	Mode: child.Mode(),
+	//	// The child inode is identified by its Inode number.
+	//	// If multiple concurrent lookups try to find the same
+	//	// inode, they are deduplicated on this key.
+	//	Ino: ino,
+	//}
+	//operations := &DfsNode{Path: node.Path + "/" + name}
+	//
+	//// The NewInode call wraps the `operations` object into an Inode.
+	//child := node.NewInode(ctx, operations, stable)
 
-	// The NewInode call wraps the `operations` object into an Inode.
-	child := node.NewInode(ctx, operations, stable)
-
-	// In case of concurrent lookup requests, it can happen that operations !=
+	// In case of concurrent lookup requests, it can happen Sthat operations !=
 	// child.Operations().
-	return child, 0
+	return child.EmbeddedInode(), 0
 }
 
 func (node *DfsNode) Create(ctx context.Context, name string, flags uint32, mode uint32, out *fuse.EntryOut) (n *fs.Inode, fh fs.FileHandle, fuseFlags uint32, errno syscall.Errno) {
 	path := node.Path + "/" + name
-	ino := FilepathHash(path)
 
 	stable := fs.StableAttr{
 		Mode: fuse.S_IFREG,
-		// The child inode is identified by its Inode number.
-		// If multiple concurrent lookups try to find the same
-		// inode, they are deduplicated on this key.
-		Ino: ino,
 	}
 
 	now := time.Now().Format(time.StampNano) + "\n"
 
-	operations := NewDfsNode(path, []byte(now), map[uint64]string{})
-	child := node.NewInode(ctx, &operations, stable)
+	operations := NewDfsNode(path, []byte(now), map[string]*DfsNode{})
+	child := node.NewInode(ctx, operations, stable)
 
-	node.Children[ino] = name
+	node.Children[name] = operations
 
 	return child, fh, 0, 0
 }
@@ -149,31 +162,54 @@ func (node *DfsNode) Rename(ctx context.Context, name string, newParent fs.Inode
 	// TODO: replace with something more elegant?
 	newNode := *(*DfsNode)(unsafe.Pointer(newNodeNode))
 
-	newHash := FilepathHash(newName)
-	hash := FilepathHash(name)
+	//newHash := FilepathHash(newName)
+	//hash := FilepathHash(name)
 
 	//newNode.AddChild(newName, node.GetChild(name), true)
 	node.MvChild(name, newParent.EmbeddedInode(), newName, true)
 
-	newNode.Children[newHash] = node.Children[hash]
-	delete(node.Children, hash)
+	newNode.Children[newName] = node.Children[name]
+	delete(node.Children, name)
 
 	return 0
+}
+
+func (node *DfsNode) Mkdir(ctx context.Context, name string, mode uint32, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
+	path := node.Path + "/" + name
+
+	stable := fs.StableAttr{
+		Mode: fuse.S_IFDIR,
+	}
+
+	//now := time.Now().Format(time.StampNano) + "\n"
+
+	operations := NewDfsNode(path, make([]byte, 0), map[string]*DfsNode{})
+	child := node.NewInode(ctx, operations, stable)
+
+	node.Children[name] = operations
+	ok := node.AddChild(name, child, false)
+
+	returnCode := syscall.Errno(0)
+	if !ok {
+		returnCode = syscall.EEXIST
+	}
+
+	return child, returnCode
 }
 
 //=== Locks part ===//
 
-func (*DfsNode) Getlk(ctx context.Context, owner uint64, lk *fuse.FileLock, flags uint32, out *fuse.FileLock) syscall.Errno {
-	log.Fatal("Getlk is not implemented")
-	return 0
-}
-
-func (*DfsNode) Setlk(ctx context.Context, f fs.FileHandle, owner uint64, lk *fuse.FileLock, flags uint32) syscall.Errno {
-	log.Fatal("Setlk is not implemented")
-	return 0
-}
-
-func (*DfsNode) Setlkw(ctx context.Context, owner uint64, lk *fuse.FileLock, flags uint32) syscall.Errno {
-	log.Fatal("Setlkw is not implemented")
-	return 0
-}
+//func (*DfsNode) Getlk(ctx context.Context, owner uint64, lk *fuse.FileLock, flags uint32, out *fuse.FileLock) syscall.Errno {
+//	log.Fatal("Getlk is not implemented")
+//	return 0
+//}
+//
+//func (*DfsNode) Setlk(ctx context.Context, f fs.FileHandle, owner uint64, lk *fuse.FileLock, flags uint32) syscall.Errno {
+//	log.Fatal("Setlk is not implemented")
+//	return 0
+//}
+//
+//func (*DfsNode) Setlkw(ctx context.Context, owner uint64, lk *fuse.FileLock, flags uint32) syscall.Errno {
+//	log.Fatal("Setlkw is not implemented")
+//	return 0
+//}

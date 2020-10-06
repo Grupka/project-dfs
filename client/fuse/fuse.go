@@ -11,11 +11,11 @@ type DfsNode struct {
 	fs.Inode
 	Path     string
 	Content  []byte
-	Children map[uint64]string
+	Children map[string]*DfsNode
 }
 
-func NewDfsNode(path string, content []byte, children map[uint64]string) DfsNode {
-	return DfsNode{
+func NewDfsNode(path string, content []byte, children map[string]*DfsNode) *DfsNode {
+	return &DfsNode{
 		Path:     path,
 		Content:  content,
 		Children: children,
@@ -34,6 +34,10 @@ var _ = (fs.NodeLookuper)((*DfsNode)(nil))
 var _ = (fs.NodeOpener)((*DfsNode)(nil))
 var _ = (fs.NodeGetattrer)((*DfsNode)(nil))
 var _ = (fs.NodeCreater)((*DfsNode)(nil))
+var _ = (fs.NodeReader)((*DfsNode)(nil))
+var _ = (fs.NodeWriter)((*DfsNode)(nil))
+var _ = (fs.NodeUnlinker)((*DfsNode)(nil))
+var _ = (fs.NodeRmdirer)((*DfsNode)(nil))
 
 func Mount(path string, node *DfsNode) *fuse.Server {
 	fmt.Println("Mounting root to", path)
