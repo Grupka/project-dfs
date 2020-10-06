@@ -6,16 +6,24 @@ import (
 	"google.golang.org/grpc"
 	"net"
 	"os"
+	"sync"
 )
 
-type NamingServerMetadata struct {
-	StorageAddresses map[string]string // key:value = serverAlias:serverAddress
-	NetworkAddress   string            // to store network ip + mask
-	Mask             string
-	LocalAddress     string
+type NamingServer struct {
+	storageAddressesMutex sync.Mutex
+	StorageAddresses      map[string]string // key:value = serverAlias:serverAddress
+	NetworkAddress        string            // to store network ip + mask
+	Mask                  string
+	LocalAddress          string
 }
 
-func initMetadata() *NamingServerMetadata {
+func (server *NamingServer) SetMap(newKey string, newValue string) {
+	server.storageAddressesMutex.Lock()
+	defer server.storageAddressesMutex.Unlock()
+	server.StorageAddresses[newKey] = newValue
+}
+
+func initNamingServer() *NamingServer {
 	// Obtain address from environment
 	address := os.Getenv("ADDRESS")
 	if address == "" {
@@ -26,11 +34,12 @@ func initMetadata() *NamingServerMetadata {
 	networkAddress := ""
 	mask := ""
 
-	return &NamingServerMetadata{
-		StorageAddresses: make(map[string]string),
-		NetworkAddress:   networkAddress,
-		Mask:             mask,
-		LocalAddress:     address,
+	return &NamingServer{
+		storageAddressesMutex: sync.Mutex{},
+		StorageAddresses:      make(map[string]string),
+		NetworkAddress:        networkAddress,
+		Mask:                  mask,
+		LocalAddress:          address,
 	}
 }
 
@@ -42,7 +51,7 @@ func CheckError(err error) {
 }
 
 func Run() {
-	metadata := initMetadata()
+	metadata := initNamingServer()
 
 	println("Initialized metadata: ")
 	fmt.Printf("%+v\n", metadata)

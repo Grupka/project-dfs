@@ -1,22 +1,32 @@
-package main
+package storage_server
 
 import (
+	"../naming_server"
 	"../pb"
 	"context"
 	"fmt"
 	"google.golang.org/grpc"
 	"log"
+	"net"
 	"os"
+	"sync"
 )
 
-type StorageServerMetadata struct {
-	LocalAddress        string
-	Alias               string
-	NamingServerAddress string
-	StorageAddresses    map[string]string // key:value = serverAlias:serverAddress
+type StorageServer struct {
+	LocalAddress          string
+	Alias                 string
+	NamingServerAddress   string
+	storageAddressesMutex sync.Mutex
+	storageAddresses      map[string]string // key:value = serverAlias:serverAddress
 }
 
-func initMetadata() *StorageServerMetadata {
+func (server *StorageServer) SetMap(newKey string, newValue string) {
+	server.storageAddressesMutex.Lock()
+	defer server.storageAddressesMutex.Unlock()
+	server.storageAddresses[newKey] = newValue
+}
+
+func initStorageServer() *StorageServer {
 
 	// Obtain local address from environment
 	localAddress := os.Getenv("ADDRESS")
@@ -39,11 +49,12 @@ func initMetadata() *StorageServerMetadata {
 		fmt.Println("ALIAS variable not specified; falling back to", alias)
 	}
 
-	return &StorageServerMetadata{
-		LocalAddress:        localAddress,
-		Alias:               alias,
-		NamingServerAddress: namingServerAddress,
-		StorageAddresses:    make(map[string]string),
+	return &StorageServer{
+		LocalAddress:          localAddress,
+		Alias:                 alias,
+		NamingServerAddress:   namingServerAddress,
+		storageAddressesMutex: sync.Mutex{},
+		storageAddresses:      make(map[string]string),
 	}
 }
 
@@ -54,9 +65,8 @@ func CheckError(err error) {
 	}
 }
 
-func main() {
-
-	metadata := initMetadata()
+func Run() {
+	metadata := initStorageServer()
 
 	fmt.Printf("Initialized storage metadata: %+v\n", metadata)
 
@@ -69,4 +79,18 @@ func main() {
 		&pb.RegRequest{ServerAlias: metadata.Alias})
 	CheckError(err)
 	log.Printf("Response from naming server: %s", response.GetStatus())
+
+	if response.GetStatus().String() == "ACCEPT" {
+		// listen to connections
+		listener, err := net.Listen("tcp", metadata.LocalAddress)
+		CheckError(err)
+		println("Listening on " + metadata.LocalAddress)
+
+		addController := naming_server.NewAdditionServiceController(metadata)
+		grpcServer := grpc.NewServer()
+		pb.RegisterStorageAdditionServer(grpcServer, addController)
+		err = grpcServer.Serve(listener)
+		CheckError(err)
+	}
+
 }
