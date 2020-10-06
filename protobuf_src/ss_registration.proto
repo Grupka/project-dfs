@@ -7,10 +7,6 @@ service Registration {
   rpc Register(RegRequest) returns (RegResponse) {}
 }
 
-service StorageAddition {
-  rpc AddStorage(AddRequest) returns (AddResponse) {}
-}
-
 message RegRequest {
   string serverAlias = 1;
 }
@@ -21,14 +17,5 @@ enum Status {
 }
 
 message RegResponse {
-  Status status = 1;
-}
-
-message AddRequest {
-  string serverAlias = 1;
-  string serverAddress = 2;
-}
-
-message AddResponse {
   Status status = 1;
 }

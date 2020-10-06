@@ -20,5 +20,5 @@ func (ctlr *AdditionServiceController) AddStorage(ctx context.Context, request *
 	// update address map on the STORAGE server
 	ctlr.metadata.SetMap(request.GetServerAlias(), request.GetServerAddress())
 
-	return &pb.AddResponse{Status: pb.Status_ACCEPT}, nil
+	return &pb.AddResponse{}, nil
 }

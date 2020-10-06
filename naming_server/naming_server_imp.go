@@ -32,7 +32,7 @@ func (ctlr *RegistrationServiceController) Register(ctx context.Context, request
 
 	// add a new server to the list of known Storage Servers
 	peerAddress := otherPeer.Addr
-	ctlr.metadata.SetMap(request.ServerAlias, peerAddress.String())
+	ctlr.metadata.SetAddressMap(request.ServerAlias, peerAddress.String())
 
 	// broadcast the address to all other Storage Servers
 	for key, element := range ctlr.metadata.StorageAddresses {
@@ -47,4 +47,35 @@ func (ctlr *RegistrationServiceController) Register(ctx context.Context, request
 	}
 
 	return &pb.RegResponse{Status: pb.Status_ACCEPT}, nil
+}
+
+type DiscoveryServiceController struct {
+	pb.UnimplementedStorageDiscoveryServer
+	metadata *NamingServer
+}
+
+func NewDiscoveryServiceController(metadataParam *NamingServer) *DiscoveryServiceController {
+	return &DiscoveryServiceController{
+		metadata: metadataParam,
+	}
+}
+
+func (ctlr *DiscoveryServiceController) Discover(ctx context.Context, request *pb.DiscoverRequest) (response *pb.DiscoverResponse, err error) {
+
+	for key, element := range ctlr.metadata.IndexMap {
+		if key == request.Path {
+			// if found file
+
+			// element -> struct StorageInfo with map[alias]ip ServersList
+			response = &pb.DiscoverResponse{}
+			var resultMap []*pb.DiscoveredStorage
+			for alias, ip := range element.ServersList {
+				resultMap[alias] = ip
+			}
+
+			response.StorageInfo = resultMap
+			return response, nil
+		}
+	}
+	return &pb.DiscoverResponse{StorageInfo: nil}, nil
 }

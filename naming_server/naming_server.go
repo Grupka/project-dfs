@@ -9,15 +9,18 @@ import (
 	"sync"
 )
 
+type StorageInfo struct {
+	ServersList map[string]string // key:value = serverAlias:serverAddress
+}
+
 type NamingServer struct {
 	storageAddressesMutex sync.Mutex
 	StorageAddresses      map[string]string // key:value = serverAlias:serverAddress
-	NetworkAddress        string            // to store network ip + mask
-	Mask                  string
 	LocalAddress          string
+	IndexMap              map[string]StorageInfo //  key:value = path:storage info
 }
 
-func (server *NamingServer) SetMap(newKey string, newValue string) {
+func (server *NamingServer) SetAddressMap(newKey string, newValue string) {
 	server.storageAddressesMutex.Lock()
 	defer server.storageAddressesMutex.Unlock()
 	server.StorageAddresses[newKey] = newValue
@@ -31,15 +34,11 @@ func initNamingServer() *NamingServer {
 		fmt.Println("ADDRESS variable not specified; falling back to", address)
 	}
 
-	networkAddress := ""
-	mask := ""
-
 	return &NamingServer{
 		storageAddressesMutex: sync.Mutex{},
 		StorageAddresses:      make(map[string]string),
-		NetworkAddress:        networkAddress,
-		Mask:                  mask,
 		LocalAddress:          address,
+		IndexMap:              make(map[string]StorageInfo),
 	}
 }
 

@@ -1,0 +1,15 @@
+syntax = 'proto3';
+package pb;
+option go_package = ".;pb";
+
+service StorageAddition {
+  rpc AddStorage(AddRequest) returns (AddResponse) {}
+}
+
+message AddRequest {
+  string serverAlias = 1;
+  string serverAddress = 2;
+}
+
+message AddResponse {
+}
