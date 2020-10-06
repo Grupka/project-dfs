@@ -44,7 +44,7 @@ message CreateFileArgs {
 }
 
 message CreateFileResult {
-  ErrorCode errorCode = 1;
+  uint32 errorCode = 1;
 }
 
 // ---
@@ -56,7 +56,7 @@ message ReadFileArgs {
 }
 
 message ReadFileResult {
-  ErrorCode errorCode = 1;
+  uint32 errorCode = 1;
   bytes buffer = 2;
 }
 
@@ -70,7 +70,7 @@ message WriteFileArgs {
 }
 
 message WriteFileResult {
-  ErrorCode errorCode = 1;
+  uint32 errorCode = 1;
 }
 
 // ---
@@ -80,7 +80,7 @@ message RemoveArgs {
 }
 
 message RemoveResult {
-  ErrorCode errorCode = 1;
+  uint32 errorCode = 1;
 }
 
 // ---
@@ -90,8 +90,8 @@ message GetFileInfoArgs {
 }
 
 message GetFileInfoResult {
-  ErrorCode errorCode = 1;
-  bytes buffer = 2;
+  uint32 errorCode = 1;
+  uint64 fileSize = 2;
 }
 
 // ---
@@ -102,7 +102,7 @@ message CopyArgs {
 }
 
 message CopyResult {
-  ErrorCode errorCode = 1;
+  uint32 errorCode = 1;
 }
 
 // ---
@@ -113,7 +113,7 @@ message MoveArgs {
 }
 
 message MoveResult {
-  ErrorCode errorCode = 1;
+  uint32 errorCode = 1;
 }
 
 // ---
@@ -123,7 +123,7 @@ message ReadDirectoryArgs {
 }
 
 message ReadDirectoryResult {
-  ErrorCode errorCode = 1;
+  uint32 errorCode = 1;
   bytes buffer = 2;
 }
 
@@ -134,5 +134,5 @@ message MakeDirectoryArgs {
 }
 
 message MakeDirectoryResult {
-  ErrorCode errorCode = 1;
+  uint32 errorCode = 1;
 }

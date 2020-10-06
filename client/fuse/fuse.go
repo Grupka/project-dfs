@@ -5,11 +5,13 @@ import (
 	"github.com/hanwen/go-fuse/fs"
 	"github.com/hanwen/go-fuse/fuse"
 	"log"
+	"project-dfs/client"
 	"unsafe"
 )
 
 type DfsNode struct {
 	fs.Inode
+	Client   *client.Client
 	Name     string
 	Content  []byte
 	Children map[string]*DfsNode
