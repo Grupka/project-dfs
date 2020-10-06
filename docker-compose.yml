@@ -2,18 +2,12 @@ version: '3.3'
 
 networks:
   main:
-    driver: bridge
-    ipam:
-      config:
-        #- subnet: 10.5.0.0/24
-        #  gateway: 10.5.0.1
 
 services:
   naming-server:
     image: 'naming_server:latest'
     networks:
-      main:
-        #ipv4_address: 10.5.0.254
+      - main
 
   storage-server-1:
     image: 'storage_server:latest'
@@ -21,6 +15,7 @@ services:
       - main
     environment:
       NAMING_SERVER_ADDRESS: 'naming-server:5678'
+      ALIAS: 'storage01'
 
   storage-server-2:
     image: 'storage_server:latest'
@@ -28,6 +23,6 @@ services:
       - main
     environment:
       NAMING_SERVER_ADDRESS: 'naming-server:5678'
-
+      ALIAS: 'storage02'
 
 
