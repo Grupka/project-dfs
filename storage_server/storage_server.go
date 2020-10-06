@@ -39,7 +39,9 @@ func main() {
 	port := "5678"
 	localAddress := ip + ":" + port
 
+	//namingServerAddr := "10.5.0.254:5678" // CHANGE TO SOME ADDRESS
 	namingServerAddr := "localhost:5678"
+
 	conn, err := grpc.Dial(namingServerAddr, grpc.WithInsecure())
 	CheckError(err)
 

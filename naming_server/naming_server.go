@@ -55,6 +55,9 @@ func GetLocalIP() string {
 func Run() {
 	metadata := initMetadata()
 
+	println("Initialized metadata: ")
+	fmt.Printf("%+v\n", metadata)
+
 	listener, err := net.Listen("tcp", metadata.LocalAddress)
 	CheckError(err)
 	println("Listening on " + metadata.LocalAddress)
@@ -63,8 +66,9 @@ func Run() {
 	grpcServer := grpc.NewServer()
 	pb.RegisterRegistrationServer(grpcServer, regController)
 	err = grpcServer.Serve(listener)
+	println("successful serving")
 	CheckError(err)
 
-	print("Storage addresses: ")
-	println(metadata.StorageAddresses)
+	println("Changed metadata: ")
+	fmt.Printf("%+v\n", metadata)
 }

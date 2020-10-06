@@ -2,12 +2,18 @@ version: '3.3'
 
 networks:
   main:
+    driver: bridge
+    ipam:
+      config:
+        #- subnet: 10.5.0.0/24
+        #  gateway: 10.5.0.1
 
 services:
   naming-server:
     image: 'naming_server:latest'
     networks:
-      - main
+      main:
+        #ipv4_address: 10.5.0.254
 
   storage-server-1:
     image: 'storage_server:latest'
