@@ -1,6 +1,6 @@
 #!/bin/bash
 
-go build -o StorageServer storage_server/storage_server.go
+go build -o StorageServer storage_server/main/main.go
 go build -o NamingServer naming_server/main/main.go
 
 mkdir -p run/naming_server
