@@ -1,11 +1,11 @@
 package naming_server
 
 import (
-	"../pb"
 	"context"
 	"errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
+	"project-dfs/pb"
 )
 
 type RegistrationServiceController struct {

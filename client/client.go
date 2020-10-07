@@ -10,12 +10,12 @@ import (
 )
 
 type Client struct {
-	namingServerClient pb.StorageDiscoveryClient
+	NamingServerClient pb.StorageDiscoveryClient
 	storageServers     map[string]pb.FileOperationsManagerClient
 }
 
 func (client *Client) GetStorageServerForPath(path string) pb.FileOperationsManagerClient {
-	discoverResponse, err := client.namingServerClient.Discover(context.Background(), &pb.DiscoverRequest{
+	discoverResponse, err := client.NamingServerClient.Discover(context.Background(), &pb.DiscoverRequest{
 		Path: path,
 	})
 	if err != nil {

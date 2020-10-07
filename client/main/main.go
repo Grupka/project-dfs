@@ -1,6 +1,6 @@
 package main
 
-import ".."
+import "project-dfs/client"
 
 func main() {
 	client.Run()

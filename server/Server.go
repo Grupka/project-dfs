@@ -1,10 +1,10 @@
 package main
 
 import (
-	"../pb"
 	"google.golang.org/grpc"
 	"net"
 	"os"
+	"project-dfs/pb"
 )
 
 func CheckError(err error) {

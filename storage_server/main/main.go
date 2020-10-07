@@ -1,7 +1,7 @@
 package main
 
 import (
-	".."
+	"project-dfs/storage_server"
 )
 
 func main() {

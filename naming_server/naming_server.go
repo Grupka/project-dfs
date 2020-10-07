@@ -1,11 +1,11 @@
 package naming_server
 
 import (
-	"../pb"
 	"fmt"
 	"google.golang.org/grpc"
 	"net"
 	"os"
+	"project-dfs/pb"
 	"sync"
 )
 
