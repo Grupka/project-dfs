@@ -68,12 +68,15 @@ func (ctlr *DiscoveryServiceController) Discover(ctx context.Context, request *p
 
 			// element -> struct StorageInfo with map[alias]ip ServersList
 			response = &pb.DiscoverResponse{}
-			var resultMap []*pb.DiscoveredStorage
+			storages := make([]*pb.DiscoveredStorage, 0)
 			for alias, ip := range element.ServersList {
-				resultMap[alias] = ip
+				storages = append(storages, &pb.DiscoveredStorage{
+					Alias:   alias,
+					Address: ip,
+				})
 			}
 
-			response.StorageInfo = resultMap
+			response.StorageInfo = storages
 			return response, nil
 		}
 	}
