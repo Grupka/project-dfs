@@ -3,6 +3,8 @@ package storage_server
 import (
 	"../pb"
 	"context"
+	"io/ioutil"
+	"log"
 	"os"
 	"syscall"
 )
@@ -14,68 +16,6 @@ const (
 type AdditionServiceController struct {
 	pb.UnimplementedStorageAdditionServer
 	Server *StorageServer
-}
-
-func (ctlr *AdditionServiceController) Initialize(ctx context.Context, args *pb.InitializeArgs) (*pb.InitializeResult, error) {
-	/* Initialize the client storage on a new system,
-	remove any existing file in the dfs root directory and return available size.*/
-
-	_ = os.RemoveAll(StoragePath)
-	return &pb.InitializeResult{
-		ErrorStatus: &pb.ErrorStatus{
-			Code:        0,
-			Description: "",
-		},
-		AvailableSize: getFreeSpace(),
-	}, nil
-}
-
-func (ctlr *AdditionServiceController) CreateFile(ctx context.Context, args *pb.CreateFileArgs) (*pb.CreateFileResult, error) {
-	// create a new empty file
-	_, err := os.Create(StoragePath + args.Path)
-	if err != nil {
-		return &pb.CreateFileResult{ErrorStatus: &pb.ErrorStatus{
-			Code:        1,
-			Description: err.Error(),
-		}}, nil
-	}
-
-	return &pb.CreateFileResult{ErrorStatus: &pb.ErrorStatus{
-		Code:        0,
-		Description: "OK",
-	}}, nil
-}
-
-func (ctlr *AdditionServiceController) ReadFile(ctx context.Context, args *pb.ReadFileArgs) (*pb.ReadFileResult, error) {
-	panic("implement me")
-}
-
-func (ctlr *AdditionServiceController) WriteFile(ctx context.Context, args *pb.WriteFileArgs) (*pb.WriteFileResult, error) {
-	panic("implement me")
-}
-
-func (ctlr *AdditionServiceController) Remove(ctx context.Context, args *pb.RemoveArgs) (*pb.RemoveResult, error) {
-	panic("implement me")
-}
-
-func (ctlr *AdditionServiceController) GetFileInfo(ctx context.Context, args *pb.GetFileInfoArgs) (*pb.GetFileInfoResult, error) {
-	panic("implement me")
-}
-
-func (ctlr *AdditionServiceController) Copy(ctx context.Context, args *pb.CopyArgs) (*pb.CopyResult, error) {
-	panic("implement me")
-}
-
-func (ctlr *AdditionServiceController) Move(ctx context.Context, args *pb.MoveArgs) (*pb.MoveResult, error) {
-	panic("implement me")
-}
-
-func (ctlr *AdditionServiceController) ReadDirectory(ctx context.Context, args *pb.ReadDirectoryArgs) (*pb.ReadDirectoryResult, error) {
-	panic("implement me")
-}
-
-func (ctlr *AdditionServiceController) MakeDirectory(ctx context.Context, args *pb.MakeDirectoryArgs) (*pb.MakeDirectoryResult, error) {
-	panic("implement me")
 }
 
 func NewAdditionServiceController(server *StorageServer) *AdditionServiceController {
@@ -93,13 +33,13 @@ func (ctlr *AdditionServiceController) AddStorage(ctx context.Context, request *
 
 // ---
 
-type InitServiceController struct {
+type FileOperationServiceController struct {
 	pb.UnimplementedFileOperationsManagerServer
 	Server *StorageServer
 }
 
-func NewInitServiceController(server *StorageServer) *InitServiceController {
-	return &InitServiceController{
+func newFileOperationServiceController(server *StorageServer) *FileOperationServiceController {
+	return &FileOperationServiceController{
 		Server: server,
 	}
 }
@@ -111,164 +51,210 @@ func getFreeSpace() int64 {
 	return int64(stat.Bavail * uint64(stat.Bsize))
 }
 
-// ---
+func (ctlr *FileOperationServiceController) Initialize(ctx context.Context, args *pb.InitializeArgs) (*pb.InitializeResult, error) {
+	/* Initialize the client storage on a new system,
+	remove any existing file in the dfs root directory and return available size.*/
 
-type CreateFileServiceController struct {
-	pb.UnimplementedFileOperationsManagerServer
-	Server *StorageServer
+	_ = os.RemoveAll(StoragePath)
+	return &pb.InitializeResult{
+		ErrorStatus: &pb.ErrorStatus{
+			Code:        0,
+			Description: "OK",
+		},
+		AvailableSize: getFreeSpace(),
+	}, nil
 }
 
-func NewCreateFileServiceController(server *StorageServer) *CreateFileServiceController {
-	return &CreateFileServiceController{
-		Server: server,
+func (ctlr *FileOperationServiceController) CreateFile(ctx context.Context, args *pb.CreateFileArgs) (*pb.CreateFileResult, error) {
+	// create a new empty file
+
+	path := StoragePath + args.Path
+	_, err := os.Create(path)
+	if err != nil {
+		return &pb.CreateFileResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		}}, nil
 	}
+
+	return &pb.CreateFileResult{ErrorStatus: &pb.ErrorStatus{
+		Code:        0,
+		Description: "OK",
+	}}, nil
 }
 
-// ---
-
-type ReadFileServiceController struct {
-	pb.UnimplementedFileOperationsManagerServer
-	Server *StorageServer
-}
-
-func NewReadFileServiceController(server *StorageServer) *ReadFileServiceController {
-	return &ReadFileServiceController{
-		Server: server,
-	}
-}
-
-func ReadFile(context.Context, *pb.ReadFileArgs) (*pb.ReadFileResult, error) {
-
+func (ctlr *FileOperationServiceController) ReadFile(ctx context.Context, args *pb.ReadFileArgs) (response *pb.ReadFileResult, err error) {
 	// download a file from the DFS to the Client side
 
-}
-
-// ---
-
-type WriteFileServiceController struct {
-	pb.UnimplementedFileOperationsManagerServer
-	Server *StorageServer
-}
-
-func NewWriteFileServiceController(server *StorageServer) *WriteFileServiceController {
-	return &WriteFileServiceController{
-		Server: server,
+	path := StoragePath + args.Path
+	fd, err := os.Open(path)
+	if err != nil {
+		return &pb.ReadFileResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		},
+			Buffer: make([]byte, 0),
+			Count:  0}, nil
 	}
-}
 
-func WriteFile(context.Context, *pb.WriteFileArgs) (*pb.WriteFileResult, error) {
-
-	// upload a file from the Client side to the DFS
-}
-
-// ---
-
-type RemoveServiceController struct {
-	pb.UnimplementedFileOperationsManagerServer
-	Server *StorageServer
-}
-
-func NewRemoveServiceController(server *StorageServer) *RemoveServiceController {
-	return &RemoveServiceController{
-		Server: server,
+	buf := make([]byte, args.Count)
+	n, err := fd.ReadAt(buf, args.Offset)
+	if err != nil {
+		return &pb.ReadFileResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		},
+			Buffer: make([]byte, 0),
+			Count:  0}, nil
 	}
+
+	fd.Close()
+	response = &pb.ReadFileResult{
+		ErrorStatus: &pb.ErrorStatus{
+			Code:        0,
+			Description: "OK",
+		},
+		Buffer: buf[0:n],
+		Count:  int32(n),
+	}
+	return response, nil
 }
 
-func Remove(context.Context, *pb.RemoveArgs) (*pb.RemoveResult, error) {
+func (ctlr *FileOperationServiceController) WriteFile(ctx context.Context, args *pb.WriteFileArgs) (*pb.WriteFileResult, error) {
 
+	path := StoragePath + args.Path
+	fd, err := os.Open(path)
+	if err != nil {
+		return &pb.WriteFileResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		}}, nil
+	}
+
+	buf := args.Buffer
+	_, err = fd.WriteAt(buf, args.Offset)
+	if err != nil {
+		return &pb.WriteFileResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		}}, nil
+	}
+
+	fd.Close()
+	return &pb.WriteFileResult{ErrorStatus: &pb.ErrorStatus{
+		Code:        0,
+		Description: "OK",
+	}}, nil
+}
+
+func (ctlr *FileOperationServiceController) Remove(ctx context.Context, args *pb.RemoveArgs) (*pb.RemoveResult, error) {
 	// allow to delete any file from DFS
 	// allow to delete directory.
-	//If the directory contains files the system asks for confirmation
+	// If the directory contains files the system asks for confirmation
 
-}
-
-// ---
-
-type GetFileInfoServiceController struct {
-	pb.UnimplementedFileOperationsManagerServer
-	Server *StorageServer
-}
-
-func NewGetFileInfoServiceController(server *StorageServer) *GetFileInfoServiceController {
-	return &GetFileInfoServiceController{
-		Server: server,
+	path := StoragePath + args.Path
+	err := os.RemoveAll(path)
+	if err != nil {
+		return &pb.RemoveResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		}}, nil
 	}
+
+	return &pb.RemoveResult{ErrorStatus: &pb.ErrorStatus{
+		Code:        0,
+		Description: "OK",
+	}}, nil
 }
 
-func GetFileInfo(context.Context, *pb.GetFileInfoArgs) (*pb.GetFileInfoResult, error) {
-
+func (ctlr *FileOperationServiceController) GetFileInfo(ctx context.Context, args *pb.GetFileInfoArgs) (*pb.GetFileInfoResult, error) {
 	// provide information about the file (any useful information - size, node id, etc.)
-}
 
-// ---
-
-type CopyServiceController struct {
-	pb.UnimplementedFileOperationsManagerServer
-	Server *StorageServer
-}
-
-func NewCopyServiceController(server *StorageServer) *CopyServiceController {
-	return &CopyServiceController{
-		Server: server,
+	path := StoragePath + args.Path
+	fileInfo, err := os.Lstat(path)
+	if err != nil {
+		return &pb.GetFileInfoResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		},
+			FileSize: 0}, nil
 	}
+
+	return &pb.GetFileInfoResult{ErrorStatus: &pb.ErrorStatus{
+		Code:        0,
+		Description: "OK",
+	},
+		FileSize: uint64(fileInfo.Size())}, nil
 }
 
-func Copy(context.Context, *pb.CopyArgs) (*pb.CopyResult, error) {
+func (ctlr *FileOperationServiceController) Copy(ctx context.Context, args *pb.CopyArgs) (*pb.CopyResult, error) {
 
-	// allow to create a copy of file
+	path := StoragePath + args.Path
 
 }
 
-// ---
+func (ctlr *FileOperationServiceController) Move(ctx context.Context, args *pb.MoveArgs) (*pb.MoveResult, error) {
 
-type MoveServiceController struct {
-	pb.UnimplementedFileOperationsManagerServer
-	Server *StorageServer
+	path := StoragePath + args.Path
+
 }
 
-func NewMoveServiceController(server *StorageServer) *MoveServiceController {
-	return &MoveServiceController{
-		Server: server,
-	}
-}
-
-func Move(context.Context, *pb.MoveArgs) (*pb.MoveResult, error) {
-
-	// allow to move a file to the specified path
-}
-
-// ---
-
-type ReadDirectoryServiceController struct {
-	pb.UnimplementedFileOperationsManagerServer
-	Server *StorageServer
-}
-
-func NewReadDirectoryServiceController(server *StorageServer) *ReadDirectoryServiceController {
-	return &ReadDirectoryServiceController{
-		Server: server,
-	}
-}
-
-func ReadDirectory(context.Context, *pb.ReadDirectoryArgs) (*pb.ReadDirectoryResult, error) {
-
+func (ctlr *FileOperationServiceController) ReadDirectory(ctx context.Context, args *pb.ReadDirectoryArgs) (*pb.ReadDirectoryResult, error) {
 	// return list of files, which are stored in the directory
-}
 
-// ---
-
-type MakeDirectoryServiceController struct {
-	pb.UnimplementedFileOperationsManagerServer
-	Server *StorageServer
-}
-
-func NewMakeDirectoryServiceController(server *StorageServer) *MakeDirectoryServiceController {
-	return &MakeDirectoryServiceController{
-		Server: server,
+	path := StoragePath + args.Path
+	fd, err := os.Open(path)
+	if err != nil {
+		return &pb.ReadDirectoryResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		},
+			Contents: make([]*pb.Node, 0)}, nil
 	}
+
+	fileInfo, err := fd.Readdir(0)
+	if err != nil {
+		return &pb.ReadDirectoryResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		},
+			Contents: make([]*pb.Node, 0)}, nil
+	}
+
+	fileInfoEntries := make([]*pb.Node, len(fileInfo))
+	var mode pb.NodeMode
+	for _, entry := range fileInfo {
+		if entry.IsDir() {
+			mode = pb.NodeMode_DIRECTORY
+		} else {
+			mode = pb.NodeMode_REGULAR_FILE
+		}
+		fileInfoEntries = append(fileInfoEntries, &pb.Node{
+			Mode: mode,
+			Name: entry.Name(),
+		})
+	}
+
+	return &pb.ReadDirectoryResult{ErrorStatus: &pb.ErrorStatus{
+		Code:        0,
+		Description: "OK",
+	},
+		Contents: fileInfoEntries}, nil
 }
 
-func MakeDirectory(context.Context, *pb.MakeDirectoryArgs) (*pb.MakeDirectoryResult, error) {
+func (ctlr *FileOperationServiceController) MakeDirectory(ctx context.Context, args *pb.MakeDirectoryArgs) (*pb.MakeDirectoryResult, error) {
 
-	// allow to create a new directory
+	path := StoragePath + args.Path
+	err := os.MkdirAll(path, 0777)
+	if err != nil {
+		return &pb.MakeDirectoryResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		}}, nil
+	}
+
+	return &pb.MakeDirectoryResult{ErrorStatus: &pb.ErrorStatus{
+		Code:        0,
+		Description: "OK",
+	}}, nil
 }
