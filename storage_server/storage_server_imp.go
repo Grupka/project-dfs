@@ -32,7 +32,7 @@ func (ctlr *AdditionServiceController) Initialize(ctx context.Context, args *pb.
 
 func (ctlr *AdditionServiceController) CreateFile(ctx context.Context, args *pb.CreateFileArgs) (*pb.CreateFileResult, error) {
 	// create a new empty file
-	_, err := os.Create(args.Path)
+	_, err := os.Create(StoragePath + args.Path)
 	if err != nil {
 		return &pb.CreateFileResult{ErrorStatus: &pb.ErrorStatus{
 			Code:        1,
@@ -75,10 +75,6 @@ func (ctlr *AdditionServiceController) ReadDirectory(ctx context.Context, args *
 }
 
 func (ctlr *AdditionServiceController) MakeDirectory(ctx context.Context, args *pb.MakeDirectoryArgs) (*pb.MakeDirectoryResult, error) {
-	panic("implement me")
-}
-
-func (ctlr *AdditionServiceController) mustEmbedUnimplementedFileOperationsManagerServer() {
 	panic("implement me")
 }
 

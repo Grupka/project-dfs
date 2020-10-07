@@ -1,12 +1,12 @@
 package client
 
 import (
-	"../pb"
 	"context"
 	"google.golang.org/grpc"
 	"log"
 	"math/rand"
 	"os"
+	"project-dfs/pb"
 )
 
 type Client struct {

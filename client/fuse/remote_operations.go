@@ -143,7 +143,7 @@ func (node *DfsNode) Write(ctx context.Context, f fs.FileHandle, data []byte, of
 	result, err := opClient.WriteFile(ctx, &info)
 	if err != nil {
 		println("error occurred during write:", err)
-		return -1, syscall.EAGAIN
+		return 0, syscall.EAGAIN
 	}
 
 	return uint32(len(data)), syscall.Errno(result.ErrorStatus.Code)
