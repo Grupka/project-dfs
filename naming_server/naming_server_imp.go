@@ -63,15 +63,29 @@ func (ctlr *DiscoveryServiceController) Discover(ctx context.Context, request *p
 
 	// key is the file's path
 	// element is StorageInfo struct
+
+	// if path == "" return ALL storage servers
+	if request.Path == "" {
+		storages := make([]*pb.DiscoveredStorage, 0)
+		for alias, address := range ctlr.metadata.StorageAddresses {
+			storages = append(storages, &pb.DiscoveredStorage{
+				Alias:   alias,
+				Address: address,
+			})
+		}
+		return &pb.DiscoverResponse{StorageInfo: storages}, nil
+	}
+
 	for key, element := range ctlr.metadata.IndexMap {
 		if key == request.Path {
 			// if found file
 
 			response = &pb.DiscoverResponse{}
 			storages := make([]*pb.DiscoveredStorage, 0)
-			for alias := range element.ServersList {
+			for _, alias := range element.ServersList {
 				storages = append(storages, &pb.DiscoveredStorage{
-					Alias: element.ServersList[alias],
+					Alias:   alias,
+					Address: ctlr.metadata.StorageAddresses[alias],
 				})
 			}
 
