@@ -6,7 +6,6 @@ import (
 	"github.com/hanwen/go-fuse/fuse"
 	"project-dfs/pb"
 	"syscall"
-	"time"
 	"unsafe"
 )
 
@@ -34,6 +33,7 @@ func (node *DfsNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.Att
 	}
 	result, err := opClient.GetFileInfo(ctx, &info)
 	if err != nil {
+		println("error occurred during getattr:", err)
 		return syscall.EAGAIN
 	}
 
@@ -45,8 +45,6 @@ func (node *DfsNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.Att
 
 // Used to delete regular files.
 func (node *DfsNode) Unlink(ctx context.Context, name string) syscall.Errno {
-	//delete(node.Children, name)
-
 	path := node.Path() + "/" + name
 
 	// Find the appropriate storage server
@@ -58,6 +56,7 @@ func (node *DfsNode) Unlink(ctx context.Context, name string) syscall.Errno {
 
 	result, err := opClient.Remove(ctx, &info)
 	if err != nil {
+		println("error occurred during unlink:", err)
 		return syscall.EAGAIN
 	}
 
@@ -66,8 +65,6 @@ func (node *DfsNode) Unlink(ctx context.Context, name string) syscall.Errno {
 
 // Used to delete directories.
 func (node *DfsNode) Rmdir(ctx context.Context, name string) syscall.Errno {
-	//delete(node.Children, name)
-
 	path := node.Path() + "/" + name
 
 	// Find the appropriate storage server
@@ -79,6 +76,7 @@ func (node *DfsNode) Rmdir(ctx context.Context, name string) syscall.Errno {
 
 	result, err := opClient.Remove(ctx, &info)
 	if err != nil {
+		println("error occurred during rmdir:", err)
 		return syscall.EAGAIN
 	}
 
@@ -102,14 +100,24 @@ func (h *DfsHandle) Read(ctx context.Context, dest []byte, off int64) (fuse.Read
 
 // Reads from the node.
 func (node *DfsNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
-	end := off + int64(len(dest))
-	if end > int64(len(node.Content)) {
-		end = int64(len(node.Content))
+	path := node.Path()
+
+	// Find the appropriate storage server
+	opClient := node.Client.GetStorageServerForPath(path)
+
+	info := pb.ReadFileArgs{
+		Path:   path,
+		Offset: off,
+		Count:  int64(len(dest)),
 	}
 
-	// We could copy to the `dest` buffer, but since we have a
-	// []byte already, return that.
-	return fuse.ReadResultData(node.Content[off:end]), 0
+	result, err := opClient.ReadFile(ctx, &info)
+	if err != nil {
+		println("error occurred during read:", err)
+		return nil, syscall.EAGAIN
+	}
+
+	return fuse.ReadResultData(result.Buffer), syscall.Errno(result.ErrorCode)
 }
 
 // Writes to a handle. In our case, simply forwards call to the node.
@@ -119,106 +127,166 @@ func (h *DfsHandle) Write(ctx context.Context, data []byte, off int64) (written 
 
 // Writes to a node.
 func (node *DfsNode) Write(ctx context.Context, f fs.FileHandle, data []byte, off int64) (written uint32, errno syscall.Errno) {
-	// Extend the content size if needed
-	end := off + int64(len(data))
-	if end > int64(len(node.Content)) {
-		additionalArray := make([]byte, end-int64(len(node.Content)))
-		node.Content = append(node.Content, additionalArray...)
+	path := node.Path()
+
+	// Find the appropriate storage server
+	opClient := node.Client.GetStorageServerForPath(path)
+
+	info := pb.WriteFileArgs{
+		Path:   path,
+		Offset: off,
+		// TODO: remove count, as it is derivable from the buffer
+		Count:  int64(len(data)),
+		Buffer: data,
 	}
 
-	copy(node.Content[off:end], data)
-	return uint32(len(data)), 0
+	result, err := opClient.WriteFile(ctx, &info)
+	if err != nil {
+		println("error occurred during write:", err)
+		return -1, syscall.EAGAIN
+	}
+
+	return uint32(len(data)), syscall.Errno(result.ErrorCode)
 }
 
 //=== Directories part ===//
 
 // Lists all nodes in a directory.
 func (node *DfsNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
-	r := make([]fuse.DirEntry, 0, len(node.Children))
-	for name, childNode := range node.Children {
-		d := fuse.DirEntry{
-			Name: name,
-			Ino:  childNode.StableAttr().Ino,
-			// In our FS, mode is either DIRectory (fuse.S_IFDIR) or REGular file (fuse.S_IFREG).
-			// We do not support symlinks or other stuff.
-			Mode: childNode.Mode(),
-		}
-		r = append(r, d)
+	path := node.Path()
+
+	// Find the appropriate storage server
+	opClient := node.Client.GetStorageServerForPath(path)
+
+	info := pb.ReadDirectoryArgs{
+		Path: path,
 	}
 
-	return fs.NewListDirStream(r), 0
+	result, err := opClient.ReadDirectory(ctx, &info)
+	if err != nil {
+		println("error occurred during rmdir:", err)
+		return nil, syscall.EAGAIN
+	}
+
+	r := make([]fuse.DirEntry, 0, len(result.Contents))
+	for _, n := range result.Contents {
+		mode := fuse.S_IFREG
+		if n.Mode == pb.NodeMode_DIRECTORY {
+			mode = fuse.S_IFDIR
+		}
+
+		r = append(r, fuse.DirEntry{
+			Name: n.Name,
+			Mode: uint32(mode),
+		})
+	}
+
+	return fs.NewListDirStream(r), syscall.Errno(result.ErrorCode)
 }
 
 // Checks if asked file is located in the asked node.
 func (node *DfsNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
-	// Check the list of files for the requested name
-	ino := uint64(0)
-	child := (*DfsNode)(nil)
-	for _name, _node := range node.Children {
-		if _name == name {
-			ino = _node.StableAttr().Ino
-			child = _node
-			break
+	path := node.Path()
+
+	// Find the appropriate storage server
+	opClient := node.Client.GetStorageServerForPath(path)
+
+	info := pb.ReadDirectoryArgs{
+		Path: path,
+	}
+
+	result, err := opClient.ReadDirectory(ctx, &info)
+	if err != nil {
+		println("error occurred during lookup:", err)
+		return nil, syscall.EAGAIN
+	}
+
+	for _, n := range result.Contents {
+		if n.Name != name {
+			continue
 		}
+
+		mode := fuse.S_IFREG
+		if n.Mode == pb.NodeMode_DIRECTORY {
+			mode = fuse.S_IFDIR
+		}
+
+		operations := NewDfsNode(node.Client, name)
+		stable := fs.StableAttr{Mode: uint32(mode)}
+		child := node.NewInode(ctx, operations, stable)
+
+		return child.EmbeddedInode(), 0
 	}
 
-	// If no such entry is found in the directory, abort
-	if ino == 0 {
-		return nil, syscall.ENOENT
-	}
-
-	return child.EmbeddedInode(), 0
+	return nil, syscall.Errno(result.ErrorCode)
 }
 
 // Creates a file.
 func (node *DfsNode) Create(ctx context.Context, name string, flags uint32, mode uint32, out *fuse.EntryOut) (n *fs.Inode, fh fs.FileHandle, fuseFlags uint32, errno syscall.Errno) {
-	stable := fs.StableAttr{
-		Mode: fuse.S_IFREG,
+	path := node.Path() + "/" + name
+
+	opClient := node.Client.GetRandomStorageServer()
+
+	info := pb.CreateFileArgs{
+		Path: path,
 	}
 
-	now := time.Now().Format(time.StampNano) + "\n"
+	result, err := opClient.CreateFile(ctx, &info)
+	if err != nil {
+		println("error occurred during create:", err)
+		return nil, nil, 0, syscall.EAGAIN
+	}
 
-	operations := NewDfsNode(name, []byte(now), map[string]*DfsNode{})
+	operations := NewDfsNode(node.Client, name)
+	stable := fs.StableAttr{Mode: fuse.S_IFREG}
 	child := node.NewInode(ctx, operations, stable)
 
-	node.Children[name] = operations
-
-	return child, fh, 0, 0
+	return child, fh, 0, syscall.Errno(result.ErrorCode)
 }
 
 // Renames a node (both files and directories).
 func (node *DfsNode) Rename(ctx context.Context, name string, newParent fs.InodeEmbedder, newName string, flags uint32) syscall.Errno {
-	newParentEmbeddedNode := newParent.EmbeddedInode()
-	// TODO: replace with something more elegant?
-	newParentNode := *(*DfsNode)(unsafe.Pointer(newParentEmbeddedNode))
+	path := node.Path() + "/" + name
+	_newParent := (*DfsNode)(unsafe.Pointer(newParent.EmbeddedInode()))
 
-	node.MvChild(name, newParent.EmbeddedInode(), newName, true)
-	node.Name = newName
+	// Find the appropriate storage server
+	opClient := node.Client.GetStorageServerForPath(path)
 
-	newParentNode.Children[newName] = node.Children[name]
-	delete(node.Children, name)
+	info := pb.MoveArgs{
+		Path:    path,
+		NewPath: _newParent.Path() + "/" + newName,
+	}
 
-	return 0
+	result, err := opClient.Move(ctx, &info)
+	if err != nil {
+		println("error occurred during rename:", err)
+		return syscall.EAGAIN
+	}
+
+	return syscall.Errno(result.ErrorCode)
 }
 
 // Creates a directory.
 func (node *DfsNode) Mkdir(ctx context.Context, name string, mode uint32, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
-	stable := fs.StableAttr{
-		Mode: fuse.S_IFDIR,
+	path := node.Path()
+
+	opClient := node.Client.GetRandomStorageServer()
+
+	info := pb.MakeDirectoryArgs{
+		Path: path,
 	}
 
-	operations := NewDfsNode(name, make([]byte, 0), map[string]*DfsNode{})
+	result, err := opClient.MakeDirectory(ctx, &info)
+	if err != nil {
+		println("error occurred during create:", err)
+		return nil, syscall.EAGAIN
+	}
+
+	operations := NewDfsNode(node.Client, name)
+	stable := fs.StableAttr{Mode: fuse.S_IFDIR}
 	child := node.NewInode(ctx, operations, stable)
 
-	node.Children[name] = operations
-	ok := node.AddChild(name, child, false)
-
-	returnCode := syscall.Errno(0)
-	if !ok {
-		returnCode = syscall.EEXIST
-	}
-
-	return child, returnCode
+	return child, syscall.Errno(result.ErrorCode)
 }
 
 //=== Locks part ===//

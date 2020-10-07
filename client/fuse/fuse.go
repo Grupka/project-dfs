@@ -11,17 +11,14 @@ import (
 
 type DfsNode struct {
 	fs.Inode
-	Client   *client.Client
-	Name     string
-	Content  []byte
-	Children map[string]*DfsNode
+	Client *client.Client
+	Name   string
 }
 
-func NewDfsNode(name string, content []byte, children map[string]*DfsNode) *DfsNode {
+func NewDfsNode(client *client.Client, name string) *DfsNode {
 	return &DfsNode{
-		Name:     name,
-		Content:  content,
-		Children: children,
+		Client: client,
+		Name:   name,
 	}
 }
 

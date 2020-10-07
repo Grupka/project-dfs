@@ -44,7 +44,7 @@ func initNamingServer() *NamingServer {
 
 func CheckError(err error) {
 	if err != nil {
-		fmt.Errorf("error serving gRPC server %s", err)
+		println("Error serving gRPC server:", err)
 		os.Exit(1)
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"../pb"
 	"context"
 	"errors"
-	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 )
@@ -26,7 +25,7 @@ func (ctlr *RegistrationServiceController) Register(ctx context.Context, request
 
 	otherPeer, ok := peer.FromContext(ctx)
 	if !ok {
-		fmt.Errorf("other peer not found")
+		println("other peer not found")
 		return &pb.RegResponse{Status: pb.Status_DECLINE}, errors.New("other peer not found")
 	}
 

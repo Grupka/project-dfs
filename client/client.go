@@ -17,9 +17,13 @@ func (client *Client) GetStorageServerForPath(path string) pb.FileOperationsMana
 	return nil
 }
 
+func (client *Client) GetRandomStorageServer() pb.FileOperationsManagerClient {
+	return nil
+}
+
 func CheckError(err error) {
 	if err != nil {
-		fmt.Errorf("error serving gRPC server %s", err)
+		println("Error serving gRPC server:", err)
 		os.Exit(1)
 	}
 }

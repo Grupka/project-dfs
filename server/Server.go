@@ -2,7 +2,6 @@ package main
 
 import (
 	"../pb"
-	"fmt"
 	"google.golang.org/grpc"
 	"net"
 	"os"
@@ -10,7 +9,7 @@ import (
 
 func CheckError(err error) {
 	if err != nil {
-		fmt.Errorf("error serving gRPC server %s", err)
+		println("Error serving gRPC server", err)
 		os.Exit(1)
 	}
 }

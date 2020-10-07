@@ -124,7 +124,17 @@ message ReadDirectoryArgs {
 
 message ReadDirectoryResult {
   uint32 errorCode = 1;
-  bytes buffer = 2;
+  repeated Node contents = 2;
+}
+
+enum NodeMode {
+  REGULAR_FILE = 0;
+  DIRECTORY = 1;
+}
+
+message Node {
+  NodeMode mode = 1;
+  string name = 2;
 }
 
 // ---
