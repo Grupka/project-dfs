@@ -1,4 +1,4 @@
-package main
+package client
 
 import (
 	"../pb"
@@ -9,6 +9,14 @@ import (
 	"os"
 )
 
+type Client struct {
+	namingServerClient pb.NamingServerClient
+}
+
+func (client *Client) GetStorageServerForPath(path string) pb.FileOperationsManagerClient {
+	return nil
+}
+
 func CheckError(err error) {
 	if err != nil {
 		fmt.Errorf("error serving gRPC server %s", err)
@@ -16,10 +24,10 @@ func CheckError(err error) {
 	}
 }
 
-func main() {
-	serverAddr := "localhost:5678"
+func Run() {
+	namingServerAddress := "localhost:5678"
 
-	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	conn, err := grpc.Dial(namingServerAddress, grpc.WithInsecure())
 	CheckError(err)
 
 	aliveClient := pb.NewKeepAliveClient(conn)

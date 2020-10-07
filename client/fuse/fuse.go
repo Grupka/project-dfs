@@ -5,25 +5,41 @@ import (
 	"github.com/hanwen/go-fuse/fs"
 	"github.com/hanwen/go-fuse/fuse"
 	"log"
+	"project-dfs/client"
+	"unsafe"
 )
 
 type DfsNode struct {
 	fs.Inode
-	Path     string
+	Client   *client.Client
+	Name     string
 	Content  []byte
 	Children map[string]*DfsNode
 }
 
-func NewDfsNode(path string, content []byte, children map[string]*DfsNode) *DfsNode {
+func NewDfsNode(name string, content []byte, children map[string]*DfsNode) *DfsNode {
 	return &DfsNode{
-		Path:     path,
+		Name:     name,
 		Content:  content,
 		Children: children,
 	}
 }
 
+func (node *DfsNode) Path() string {
+	n := node
+	path := ""
+
+	for n != nil {
+		path = "/" + n.Name + path
+		_, n_ := n.Parent()
+		n = (*DfsNode)(unsafe.Pointer(n_))
+	}
+
+	return path
+}
+
 func (node *DfsNode) String() string {
-	return "DfsNode{" + node.Path + "}"
+	return "DfsNode{" + node.Path() + "}"
 }
 
 // Node types must be InodeEmbedders.
