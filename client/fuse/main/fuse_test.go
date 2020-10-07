@@ -17,9 +17,9 @@ func TestMount(t *testing.T) {
 		fmt.Println("NAMING_SERVER_ADDRESS not specified, falling back to", namingServerAddress)
 	}
 
-	conn, err := grpc.Dial(namingServerAddress)
+	conn, err := grpc.Dial(namingServerAddress, grpc.WithInsecure())
 	if err != nil {
-		println("Error occurred while connecting to naming server:", err)
+		println("Error occurred while connecting to naming server:", err.Error())
 		return
 	}
 

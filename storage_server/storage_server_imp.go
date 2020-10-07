@@ -186,15 +186,13 @@ func (ctlr *FileOperationServiceController) GetFileInfo(ctx context.Context, arg
 }
 
 func (ctlr *FileOperationServiceController) Copy(ctx context.Context, args *pb.CopyArgs) (*pb.CopyResult, error) {
-
-	path := StoragePath + args.Path
-
+	//path := StoragePath + args.Path
+	panic("COPY")
 }
 
 func (ctlr *FileOperationServiceController) Move(ctx context.Context, args *pb.MoveArgs) (*pb.MoveResult, error) {
-
-	path := StoragePath + args.Path
-
+	//	path := StoragePath + args.Path
+	panic("MOVE")
 }
 
 func (ctlr *FileOperationServiceController) ReadDirectory(ctx context.Context, args *pb.ReadDirectoryArgs) (*pb.ReadDirectoryResult, error) {
