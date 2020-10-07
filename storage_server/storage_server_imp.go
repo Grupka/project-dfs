@@ -3,6 +3,8 @@ package storage_server
 import (
 	"../pb"
 	"context"
+	"os"
+	"syscall"
 )
 
 type AdditionServiceController struct {
@@ -37,7 +39,8 @@ func NewInitServiceController(server *StorageServer) *InitServiceController {
 }
 
 func Initialize(context.Context, *pb.InitializeArgs) (*pb.InitializeResult, error) {
-
+	/* Initialize the client storage on a new system,
+	remove any existing file in the dfs root directory and return available size.*/
 }
 
 // ---
@@ -53,8 +56,21 @@ func NewCreateFileServiceController(server *StorageServer) *CreateFileServiceCon
 	}
 }
 
-func CreateFile(context.Context, *pb.CreateFileArgs) (*pb.CreateFileResult, error) {
+func CreateFile(ctx context.Context, args *pb.CreateFileArgs) (*pb.CreateFileResult, error) {
 
+	//create a new empty file
+	_, err := os.Create(args.Path)
+	if err != nil {
+		return &pb.CreateFileResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		}}, nil
+	}
+
+	return &pb.CreateFileResult{ErrorStatus: &pb.ErrorStatus{
+		Code:        0,
+		Description: "OK",
+	}}, nil
 }
 
 // ---
@@ -71,6 +87,8 @@ func NewReadFileServiceController(server *StorageServer) *ReadFileServiceControl
 }
 
 func ReadFile(context.Context, *pb.ReadFileArgs) (*pb.ReadFileResult, error) {
+
+	// download a file from the DFS to the Client side
 
 }
 
@@ -89,6 +107,7 @@ func NewWriteFileServiceController(server *StorageServer) *WriteFileServiceContr
 
 func WriteFile(context.Context, *pb.WriteFileArgs) (*pb.WriteFileResult, error) {
 
+	// upload a file from the Client side to the DFS
 }
 
 // ---
@@ -105,6 +124,10 @@ func NewRemoveServiceController(server *StorageServer) *RemoveServiceController 
 }
 
 func Remove(context.Context, *pb.RemoveArgs) (*pb.RemoveResult, error) {
+
+	// allow to delete any file from DFS
+	// allow to delete directory.
+	//If the directory contains files the system asks for confirmation
 
 }
 
@@ -123,6 +146,7 @@ func NewGetFileInfoServiceController(server *StorageServer) *GetFileInfoServiceC
 
 func GetFileInfo(context.Context, *pb.GetFileInfoArgs) (*pb.GetFileInfoResult, error) {
 
+	// provide information about the file (any useful information - size, node id, etc.)
 }
 
 // ---
@@ -139,6 +163,8 @@ func NewCopyServiceController(server *StorageServer) *CopyServiceController {
 }
 
 func Copy(context.Context, *pb.CopyArgs) (*pb.CopyResult, error) {
+
+	// allow to create a copy of file
 
 }
 
@@ -157,6 +183,7 @@ func NewMoveServiceController(server *StorageServer) *MoveServiceController {
 
 func Move(context.Context, *pb.MoveArgs) (*pb.MoveResult, error) {
 
+	// allow to move a file to the specified path
 }
 
 // ---
@@ -174,6 +201,7 @@ func NewReadDirectoryServiceController(server *StorageServer) *ReadDirectoryServ
 
 func ReadDirectory(context.Context, *pb.ReadDirectoryArgs) (*pb.ReadDirectoryResult, error) {
 
+	// return list of files, which are stored in the directory
 }
 
 // ---
@@ -191,4 +219,5 @@ func NewMakeDirectoryServiceController(server *StorageServer) *MakeDirectoryServ
 
 func MakeDirectory(context.Context, *pb.MakeDirectoryArgs) (*pb.MakeDirectoryResult, error) {
 
+	// allow to create a new directory
 }
