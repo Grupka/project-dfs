@@ -80,5 +80,5 @@ func (ctlr *DiscoveryServiceController) Discover(ctx context.Context, request *p
 			return response, nil
 		}
 	}
-	return &pb.DiscoverResponse{StorageInfo: nil}, nil
+	return &pb.DiscoverResponse{StorageInfo: make([]*pb.DiscoveredStorage, 0)}, nil
 }
