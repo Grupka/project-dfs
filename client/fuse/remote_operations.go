@@ -60,7 +60,7 @@ func (node *DfsNode) Unlink(ctx context.Context, name string) syscall.Errno {
 		return syscall.EAGAIN
 	}
 
-	return syscall.Errno(result.ErrorCode)
+	return syscall.Errno(result.ErrorStatus.Code)
 }
 
 // Used to delete directories.
@@ -80,7 +80,7 @@ func (node *DfsNode) Rmdir(ctx context.Context, name string) syscall.Errno {
 		return syscall.EAGAIN
 	}
 
-	return syscall.Errno(result.ErrorCode)
+	return syscall.Errno(result.ErrorStatus.Code)
 }
 
 //=== Files part ===//
@@ -117,7 +117,7 @@ func (node *DfsNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off
 		return nil, syscall.EAGAIN
 	}
 
-	return fuse.ReadResultData(result.Buffer), syscall.Errno(result.ErrorCode)
+	return fuse.ReadResultData(result.Buffer), syscall.Errno(result.ErrorStatus.Code)
 }
 
 // Writes to a handle. In our case, simply forwards call to the node.
@@ -146,7 +146,7 @@ func (node *DfsNode) Write(ctx context.Context, f fs.FileHandle, data []byte, of
 		return -1, syscall.EAGAIN
 	}
 
-	return uint32(len(data)), syscall.Errno(result.ErrorCode)
+	return uint32(len(data)), syscall.Errno(result.ErrorStatus.Code)
 }
 
 //=== Directories part ===//
@@ -181,7 +181,7 @@ func (node *DfsNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) 
 		})
 	}
 
-	return fs.NewListDirStream(r), syscall.Errno(result.ErrorCode)
+	return fs.NewListDirStream(r), syscall.Errno(result.ErrorStatus.Code)
 }
 
 // Checks if asked file is located in the asked node.
@@ -218,7 +218,7 @@ func (node *DfsNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut
 		return child.EmbeddedInode(), 0
 	}
 
-	return nil, syscall.Errno(result.ErrorCode)
+	return nil, syscall.Errno(result.ErrorStatus.Code)
 }
 
 // Creates a file.
@@ -241,7 +241,7 @@ func (node *DfsNode) Create(ctx context.Context, name string, flags uint32, mode
 	stable := fs.StableAttr{Mode: fuse.S_IFREG}
 	child := node.NewInode(ctx, operations, stable)
 
-	return child, fh, 0, syscall.Errno(result.ErrorCode)
+	return child, fh, 0, syscall.Errno(result.ErrorStatus.Code)
 }
 
 // Renames a node (both files and directories).
@@ -263,7 +263,7 @@ func (node *DfsNode) Rename(ctx context.Context, name string, newParent fs.Inode
 		return syscall.EAGAIN
 	}
 
-	return syscall.Errno(result.ErrorCode)
+	return syscall.Errno(result.ErrorStatus.Code)
 }
 
 // Creates a directory.
@@ -286,7 +286,7 @@ func (node *DfsNode) Mkdir(ctx context.Context, name string, mode uint32, out *f
 	stable := fs.StableAttr{Mode: fuse.S_IFDIR}
 	child := node.NewInode(ctx, operations, stable)
 
-	return child, syscall.Errno(result.ErrorCode)
+	return child, syscall.Errno(result.ErrorStatus.Code)
 }
 
 //=== Locks part ===//
