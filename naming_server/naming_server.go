@@ -10,7 +10,7 @@ import (
 )
 
 type StorageInfo struct {
-	ServersList map[string]string // key:value = serverAlias:serverAddress
+	ServersList []string // server's aliases
 }
 
 type NamingServer struct {
