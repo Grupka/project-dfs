@@ -12,6 +12,7 @@ message DiscoverRequest {
 
 message DiscoveredStorage {
   string alias = 1;
+  string address = 2;
 }
 
 message DiscoverResponse {
