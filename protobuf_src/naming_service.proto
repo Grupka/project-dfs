@@ -51,21 +51,22 @@ message DiscoverResponse {
 // ---
 
 message CreateFileRequest {
-
+  string path = 1;
 }
 
 message NCreateFileResult {
-
+  ErrorStatus errorStatus = 1;
 }
 
 // ---
 
 message CopyRequest {
-
+  string path = 1;
+  string newPath = 2;
 }
 
 message NCopyResult {
-
+  ErrorStatus errorStatus = 1;
 }
 
 // ---
@@ -86,43 +87,35 @@ message RegResponse {
 // ---
 
 message DeleteRequest {
-
+  string path = 1;
 }
 
 message DeleteResult {
-
+  ErrorStatus errorStatus = 1;
 }
 
 // ---
 
 message MoveRequest {
-
+  string path = 1;
+  string newPath = 2;
 }
 
 message NMoveResult {
-
+  ErrorStatus errorStatus = 1;
 }
 
 // ---
 
 message MakeDirectoryRequest {
-
-}
-
-message MakeDirectoryResult {
-
-}
-
-// ---
-
-message ReadDirectoryArgs {
   string path = 1;
 }
 
-message ReadDirectoryResult {
+message MakeDirectoryResult {
   ErrorStatus errorStatus = 1;
-  repeated Node contents = 2;
 }
+
+// ---
 
 enum NodeMode {
   REGULAR_FILE = 0;
@@ -135,11 +128,12 @@ message Node {
 }
 
 message ListDirectoryRequest {
-
+  string path = 1;
 }
 
 message ListDirectoryResult {
-
+  ErrorStatus errorStatus = 1;
+  repeated Node contents = 2;
 }
 
 
