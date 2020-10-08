@@ -2,6 +2,7 @@ package storage_server
 
 import (
 	"context"
+	"io"
 	"os"
 	"project-dfs/pb"
 	"syscall"
@@ -175,20 +176,60 @@ func (ctlr *StorageServiceController) GetFileInfo(ctx context.Context, args *pb.
 }
 
 func (ctlr *StorageServiceController) Copy(ctx context.Context, args *pb.CopyArgs) (*pb.CopyResult, error) {
-	panic("Copy not implemented")
 
-	//path := StoragePath + args.Path
+	path := StoragePath + args.Path
+	newPath := StoragePath + args.NewPath
 
+	src, err := os.Open(path)
+	if err != nil {
+		return &pb.CopyResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		}}, nil
+	}
+
+	dest, err := os.Create(newPath)
+	if err != nil {
+		return &pb.CopyResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		}}, nil
+	}
+
+	_, err = io.Copy(dest, src)
+	if err != nil {
+		return &pb.CopyResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		}}, nil
+	}
+
+	return &pb.CopyResult{ErrorStatus: &pb.ErrorStatus{
+		Code:        0,
+		Description: "OK",
+	}}, nil
 }
 
 func (ctlr *StorageServiceController) Move(ctx context.Context, args *pb.MoveArgs) (*pb.MoveResult, error) {
-	panic("Move not implemented")
 
-	//path := StoragePath + args.Path
-
-	// update IndexMap: send request to naming server
+	// update IndexTree: send request to naming server
 	// add a new service into naming_server_imp for handling such a request
 
+	path := StoragePath + args.Path
+	newPath := StoragePath + args.NewPath
+
+	err := os.Rename(path, newPath)
+	if err != nil {
+		return &pb.MoveResult{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: err.Error(),
+		}}, nil
+	}
+
+	return &pb.MoveResult{ErrorStatus: &pb.ErrorStatus{
+		Code:        0,
+		Description: "OK",
+	}}, nil
 }
 
 func (ctlr *StorageServiceController) ReadDirectory(ctx context.Context, args *pb.ReadDirectoryArgs) (*pb.ReadDirectoryResult, error) {
