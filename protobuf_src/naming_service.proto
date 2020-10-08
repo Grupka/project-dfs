@@ -10,29 +10,29 @@ service Naming {
   rpc Register(RegRequest) returns (RegResponse) {}
 
   // Creates a new file on 2 randomly selected storage servers.
-  rpc CreateFile(CreateFileRequest) returns (NCreateFileResult) {}
+  rpc CreateFile(CreateFileRequest) returns (CreateFileResponse) {}
 
   // Copies a file OR a directory (recursively) to 2 randomly selected storage servers.
   // storage server is decided for each file separately.
-  rpc Copy(CopyRequest) returns (NCopyResult) {}
+  rpc Copy(CopyRequest) returns (CopyResponse) {}
 
   // Fetches the file index to obtain list of storage servers that hold the requested path.
   rpc Discover(DiscoverRequest) returns (DiscoverResponse) {}
 
   // Removes the file with specified name from the index and notifies storage servers about file removal.
-  rpc DeleteFile(DeleteRequest) returns (DeleteResult) {}
+  rpc DeleteFile(DeleteRequest) returns (DeleteResponse) {}
 
   // Removes the directory with specified name from the index and notifies storage servers about directory removal.
-  rpc DeleteDirectory(DeleteRequest) returns (DeleteResult) {}
+  rpc DeleteDirectory(DeleteRequest) returns (DeleteResponse) {}
 
-  // Moves the file OR directory with the specified name in the index and notifies storage servers about move.
-  rpc Move(MoveRequest) returns (NMoveResult) {}
+  // Moves the file with the specified name in the index and notifies storage servers about file move.
+  rpc Move(MoveRequest) returns (MoveResponse) {}
 
   // Creates a directory in the index and notifies storage servers about newly created directory.
-  rpc MakeDirectory(MakeDirectoryRequest) returns (MakeDirectoryResult) {}
+  rpc MakeDirectory(MakeDirectoryRequest) returns (MakeDirectoryResponse) {}
 
   // Retrieves list of the directory contents from the index.
-  rpc ListDirectory(ListDirectoryRequest) returns (ListDirectoryResult) {}
+  rpc ListDirectory(ListDirectoryRequest) returns (ListDirectoryResponse) {}
 }
 
 message DiscoverRequest {
@@ -54,7 +54,7 @@ message CreateFileRequest {
   string path = 1;
 }
 
-message NCreateFileResult {
+message CreateFileResponse {
   ErrorStatus errorStatus = 1;
 }
 
@@ -65,7 +65,7 @@ message CopyRequest {
   string newPath = 2;
 }
 
-message NCopyResult {
+message CopyResponse {
   ErrorStatus errorStatus = 1;
 }
 
@@ -90,7 +90,7 @@ message DeleteRequest {
   string path = 1;
 }
 
-message DeleteResult {
+message DeleteResponse {
   ErrorStatus errorStatus = 1;
 }
 
@@ -101,7 +101,7 @@ message MoveRequest {
   string newPath = 2;
 }
 
-message NMoveResult {
+message MoveResponse {
   ErrorStatus errorStatus = 1;
 }
 
@@ -111,7 +111,7 @@ message MakeDirectoryRequest {
   string path = 1;
 }
 
-message MakeDirectoryResult {
+message MakeDirectoryResponse {
   ErrorStatus errorStatus = 1;
 }
 
@@ -131,7 +131,7 @@ message ListDirectoryRequest {
   string path = 1;
 }
 
-message ListDirectoryResult {
+message ListDirectoryResponse {
   ErrorStatus errorStatus = 1;
   repeated Node contents = 2;
 }

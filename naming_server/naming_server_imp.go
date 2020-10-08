@@ -84,3 +84,33 @@ func (ctlr *NamingServerController) Discover(ctx context.Context, request *pb.Di
 	}
 	return &pb.DiscoverResponse{StorageInfo: make([]*pb.DiscoveredStorage, 0)}, nil
 }
+
+// ---
+
+func (ctlr *NamingServerController) CreateFile(ctx context.Context, request *pb.CreateFileRequest) (*pb.CreateFileResponse, error) {
+
+}
+
+func (ctlr *NamingServerController) Move(ctx context.Context, request *pb.MoveRequest) (*pb.MoveResponse, error) {
+
+}
+
+func (ctlr *NamingServerController) DeleteFile(ctx context.Context, request *pb.DeleteRequest) (*pb.DeleteResponse, error) {
+
+}
+
+func (ctlr *NamingServerController) Copy(ctx context.Context, request *pb.CopyRequest) (*pb.CopyResponse, error) {
+	panic("no copy operation")
+}
+
+func (ctlr *NamingServerController) DeleteDirectory(ctx context.Context, request *pb.DeleteRequest) (*pb.DeleteResponse, error) {
+
+}
+
+func (ctlr *NamingServerController) MakeDirectory(ctx context.Context, request *pb.MakeDirectoryRequest) (*pb.MakeDirectoryResponse, error) {
+
+}
+
+func (ctlr *NamingServerController) ListDirectory(ctx context.Context, request *pb.ListDirectoryRequest) (*pb.ListDirectoryResponse, error) {
+
+}

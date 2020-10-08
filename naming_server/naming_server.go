@@ -13,11 +13,16 @@ type StorageInfo struct {
 	ServersList []string // Server's aliases
 }
 
+type Node struct {
+	Name     string // name of a file or directory
+	Children []*Node
+}
+
 type NamingServer struct {
 	storageAddressesMutex sync.Mutex
 	StorageAddresses      map[string]string // key:value = serverAlias:serverAddress
 	LocalAddress          string
-	IndexMap              map[string]StorageInfo //  key:value = path:storage info
+	RootIndexNode         Node
 }
 
 func (server *NamingServer) SetAddressMap(newKey string, newValue string) {
@@ -34,11 +39,16 @@ func initNamingServer() *NamingServer {
 		fmt.Println("ADDRESS variable not specified; falling back to", address)
 	}
 
+	rootNode := Node{
+		Name:     "",
+		Children: make([]*Node, 0),
+	}
+
 	return &NamingServer{
 		storageAddressesMutex: sync.Mutex{},
 		StorageAddresses:      make(map[string]string),
 		LocalAddress:          address,
-		IndexMap:              make(map[string]StorageInfo),
+		RootIndexNode:         rootNode,
 	}
 }
 

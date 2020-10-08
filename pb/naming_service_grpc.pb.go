@@ -20,22 +20,22 @@ type NamingClient interface {
 	// Registers storage server in the naming server.
 	Register(ctx context.Context, in *RegRequest, opts ...grpc.CallOption) (*RegResponse, error)
 	// Creates a new file on 2 randomly selected storage servers.
-	CreateFile(ctx context.Context, in *CreateFileRequest, opts ...grpc.CallOption) (*NCreateFileResult, error)
+	CreateFile(ctx context.Context, in *CreateFileRequest, opts ...grpc.CallOption) (*CreateFileResponse, error)
 	// Copies a file OR a directory (recursively) to 2 randomly selected storage servers.
 	// storage server is decided for each file separately.
-	Copy(ctx context.Context, in *CopyRequest, opts ...grpc.CallOption) (*NCopyResult, error)
+	Copy(ctx context.Context, in *CopyRequest, opts ...grpc.CallOption) (*CopyResponse, error)
 	// Fetches the file index to obtain list of storage servers that hold the requested path.
 	Discover(ctx context.Context, in *DiscoverRequest, opts ...grpc.CallOption) (*DiscoverResponse, error)
 	// Removes the file with specified name from the index and notifies storage servers about file removal.
-	DeleteFile(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResult, error)
+	DeleteFile(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
 	// Removes the directory with specified name from the index and notifies storage servers about directory removal.
-	DeleteDirectory(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResult, error)
-	// Moves the file OR directory with the specified name in the index and notifies storage servers about move.
-	Move(ctx context.Context, in *MoveRequest, opts ...grpc.CallOption) (*NMoveResult, error)
+	DeleteDirectory(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
+	// Moves the file with the specified name in the index and notifies storage servers about file move.
+	Move(ctx context.Context, in *MoveRequest, opts ...grpc.CallOption) (*MoveResponse, error)
 	// Creates a directory in the index and notifies storage servers about newly created directory.
-	MakeDirectory(ctx context.Context, in *MakeDirectoryRequest, opts ...grpc.CallOption) (*MakeDirectoryResult, error)
+	MakeDirectory(ctx context.Context, in *MakeDirectoryRequest, opts ...grpc.CallOption) (*MakeDirectoryResponse, error)
 	// Retrieves list of the directory contents from the index.
-	ListDirectory(ctx context.Context, in *ListDirectoryRequest, opts ...grpc.CallOption) (*ListDirectoryResult, error)
+	ListDirectory(ctx context.Context, in *ListDirectoryRequest, opts ...grpc.CallOption) (*ListDirectoryResponse, error)
 }
 
 type namingClient struct {
@@ -55,8 +55,8 @@ func (c *namingClient) Register(ctx context.Context, in *RegRequest, opts ...grp
 	return out, nil
 }
 
-func (c *namingClient) CreateFile(ctx context.Context, in *CreateFileRequest, opts ...grpc.CallOption) (*NCreateFileResult, error) {
-	out := new(NCreateFileResult)
+func (c *namingClient) CreateFile(ctx context.Context, in *CreateFileRequest, opts ...grpc.CallOption) (*CreateFileResponse, error) {
+	out := new(CreateFileResponse)
 	err := c.cc.Invoke(ctx, "/pb.Naming/CreateFile", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -64,8 +64,8 @@ func (c *namingClient) CreateFile(ctx context.Context, in *CreateFileRequest, op
 	return out, nil
 }
 
-func (c *namingClient) Copy(ctx context.Context, in *CopyRequest, opts ...grpc.CallOption) (*NCopyResult, error) {
-	out := new(NCopyResult)
+func (c *namingClient) Copy(ctx context.Context, in *CopyRequest, opts ...grpc.CallOption) (*CopyResponse, error) {
+	out := new(CopyResponse)
 	err := c.cc.Invoke(ctx, "/pb.Naming/Copy", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -82,8 +82,8 @@ func (c *namingClient) Discover(ctx context.Context, in *DiscoverRequest, opts .
 	return out, nil
 }
 
-func (c *namingClient) DeleteFile(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResult, error) {
-	out := new(DeleteResult)
+func (c *namingClient) DeleteFile(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error) {
+	out := new(DeleteResponse)
 	err := c.cc.Invoke(ctx, "/pb.Naming/DeleteFile", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -91,8 +91,8 @@ func (c *namingClient) DeleteFile(ctx context.Context, in *DeleteRequest, opts .
 	return out, nil
 }
 
-func (c *namingClient) DeleteDirectory(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResult, error) {
-	out := new(DeleteResult)
+func (c *namingClient) DeleteDirectory(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResponse, error) {
+	out := new(DeleteResponse)
 	err := c.cc.Invoke(ctx, "/pb.Naming/DeleteDirectory", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -100,8 +100,8 @@ func (c *namingClient) DeleteDirectory(ctx context.Context, in *DeleteRequest, o
 	return out, nil
 }
 
-func (c *namingClient) Move(ctx context.Context, in *MoveRequest, opts ...grpc.CallOption) (*NMoveResult, error) {
-	out := new(NMoveResult)
+func (c *namingClient) Move(ctx context.Context, in *MoveRequest, opts ...grpc.CallOption) (*MoveResponse, error) {
+	out := new(MoveResponse)
 	err := c.cc.Invoke(ctx, "/pb.Naming/Move", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -109,8 +109,8 @@ func (c *namingClient) Move(ctx context.Context, in *MoveRequest, opts ...grpc.C
 	return out, nil
 }
 
-func (c *namingClient) MakeDirectory(ctx context.Context, in *MakeDirectoryRequest, opts ...grpc.CallOption) (*MakeDirectoryResult, error) {
-	out := new(MakeDirectoryResult)
+func (c *namingClient) MakeDirectory(ctx context.Context, in *MakeDirectoryRequest, opts ...grpc.CallOption) (*MakeDirectoryResponse, error) {
+	out := new(MakeDirectoryResponse)
 	err := c.cc.Invoke(ctx, "/pb.Naming/MakeDirectory", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -118,8 +118,8 @@ func (c *namingClient) MakeDirectory(ctx context.Context, in *MakeDirectoryReque
 	return out, nil
 }
 
-func (c *namingClient) ListDirectory(ctx context.Context, in *ListDirectoryRequest, opts ...grpc.CallOption) (*ListDirectoryResult, error) {
-	out := new(ListDirectoryResult)
+func (c *namingClient) ListDirectory(ctx context.Context, in *ListDirectoryRequest, opts ...grpc.CallOption) (*ListDirectoryResponse, error) {
+	out := new(ListDirectoryResponse)
 	err := c.cc.Invoke(ctx, "/pb.Naming/ListDirectory", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -134,22 +134,22 @@ type NamingServer interface {
 	// Registers storage server in the naming server.
 	Register(context.Context, *RegRequest) (*RegResponse, error)
 	// Creates a new file on 2 randomly selected storage servers.
-	CreateFile(context.Context, *CreateFileRequest) (*NCreateFileResult, error)
+	CreateFile(context.Context, *CreateFileRequest) (*CreateFileResponse, error)
 	// Copies a file OR a directory (recursively) to 2 randomly selected storage servers.
 	// storage server is decided for each file separately.
-	Copy(context.Context, *CopyRequest) (*NCopyResult, error)
+	Copy(context.Context, *CopyRequest) (*CopyResponse, error)
 	// Fetches the file index to obtain list of storage servers that hold the requested path.
 	Discover(context.Context, *DiscoverRequest) (*DiscoverResponse, error)
 	// Removes the file with specified name from the index and notifies storage servers about file removal.
-	DeleteFile(context.Context, *DeleteRequest) (*DeleteResult, error)
+	DeleteFile(context.Context, *DeleteRequest) (*DeleteResponse, error)
 	// Removes the directory with specified name from the index and notifies storage servers about directory removal.
-	DeleteDirectory(context.Context, *DeleteRequest) (*DeleteResult, error)
-	// Moves the file OR directory with the specified name in the index and notifies storage servers about move.
-	Move(context.Context, *MoveRequest) (*NMoveResult, error)
+	DeleteDirectory(context.Context, *DeleteRequest) (*DeleteResponse, error)
+	// Moves the file with the specified name in the index and notifies storage servers about file move.
+	Move(context.Context, *MoveRequest) (*MoveResponse, error)
 	// Creates a directory in the index and notifies storage servers about newly created directory.
-	MakeDirectory(context.Context, *MakeDirectoryRequest) (*MakeDirectoryResult, error)
+	MakeDirectory(context.Context, *MakeDirectoryRequest) (*MakeDirectoryResponse, error)
 	// Retrieves list of the directory contents from the index.
-	ListDirectory(context.Context, *ListDirectoryRequest) (*ListDirectoryResult, error)
+	ListDirectory(context.Context, *ListDirectoryRequest) (*ListDirectoryResponse, error)
 	mustEmbedUnimplementedNamingServer()
 }
 
@@ -160,28 +160,28 @@ type UnimplementedNamingServer struct {
 func (UnimplementedNamingServer) Register(context.Context, *RegRequest) (*RegResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
 }
-func (UnimplementedNamingServer) CreateFile(context.Context, *CreateFileRequest) (*NCreateFileResult, error) {
+func (UnimplementedNamingServer) CreateFile(context.Context, *CreateFileRequest) (*CreateFileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateFile not implemented")
 }
-func (UnimplementedNamingServer) Copy(context.Context, *CopyRequest) (*NCopyResult, error) {
+func (UnimplementedNamingServer) Copy(context.Context, *CopyRequest) (*CopyResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Copy not implemented")
 }
 func (UnimplementedNamingServer) Discover(context.Context, *DiscoverRequest) (*DiscoverResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Discover not implemented")
 }
-func (UnimplementedNamingServer) DeleteFile(context.Context, *DeleteRequest) (*DeleteResult, error) {
+func (UnimplementedNamingServer) DeleteFile(context.Context, *DeleteRequest) (*DeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteFile not implemented")
 }
-func (UnimplementedNamingServer) DeleteDirectory(context.Context, *DeleteRequest) (*DeleteResult, error) {
+func (UnimplementedNamingServer) DeleteDirectory(context.Context, *DeleteRequest) (*DeleteResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteDirectory not implemented")
 }
-func (UnimplementedNamingServer) Move(context.Context, *MoveRequest) (*NMoveResult, error) {
+func (UnimplementedNamingServer) Move(context.Context, *MoveRequest) (*MoveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Move not implemented")
 }
-func (UnimplementedNamingServer) MakeDirectory(context.Context, *MakeDirectoryRequest) (*MakeDirectoryResult, error) {
+func (UnimplementedNamingServer) MakeDirectory(context.Context, *MakeDirectoryRequest) (*MakeDirectoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MakeDirectory not implemented")
 }
-func (UnimplementedNamingServer) ListDirectory(context.Context, *ListDirectoryRequest) (*ListDirectoryResult, error) {
+func (UnimplementedNamingServer) ListDirectory(context.Context, *ListDirectoryRequest) (*ListDirectoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListDirectory not implemented")
 }
 func (UnimplementedNamingServer) mustEmbedUnimplementedNamingServer() {}
