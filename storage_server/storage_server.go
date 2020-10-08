@@ -73,7 +73,7 @@ func Run() {
 	conn, err := grpc.Dial(metadata.NamingServerAddress, grpc.WithInsecure())
 	CheckError(err)
 
-	newServer := pb.NewRegistrationClient(conn)
+	newServer := pb.NewNamingClient(conn)
 	response, err := newServer.Register(context.Background(),
 		&pb.RegRequest{ServerAlias: metadata.Alias})
 	CheckError(err)
@@ -85,9 +85,9 @@ func Run() {
 		CheckError(err)
 		println("Listening on " + metadata.LocalAddress)
 
-		addController := NewAdditionServiceController(metadata)
+		storageController := NewStorageServiceController(metadata)
 		grpcServer := grpc.NewServer()
-		pb.RegisterStorageAdditionServer(grpcServer, addController)
+		pb.RegisterStorageServer(grpcServer, storageController)
 		err = grpcServer.Serve(listener)
 		CheckError(err)
 	}

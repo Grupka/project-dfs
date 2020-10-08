@@ -1,2 +1,0 @@
-hello world
-some dummy text to be altered some day

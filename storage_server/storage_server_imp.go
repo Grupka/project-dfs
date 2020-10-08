@@ -11,18 +11,18 @@ const (
 	StoragePath = "storage"
 )
 
-type AdditionServiceController struct {
-	pb.UnimplementedStorageAdditionServer
+type StorageServiceController struct {
+	pb.UnimplementedStorageServer
 	Server *StorageServer
 }
 
-func NewAdditionServiceController(server *StorageServer) *AdditionServiceController {
-	return &AdditionServiceController{
+func NewStorageServiceController(server *StorageServer) *StorageServiceController {
+	return &StorageServiceController{
 		Server: server,
 	}
 }
 
-func (ctlr *AdditionServiceController) AddStorage(ctx context.Context, request *pb.AddRequest) (*pb.AddResponse, error) {
+func (ctlr *StorageServiceController) AddStorage(ctx context.Context, request *pb.AddRequest) (*pb.AddResponse, error) {
 	// update address map on the STORAGE server
 	ctlr.Server.SetMap(request.GetServerAlias(), request.GetServerAddress())
 
@@ -31,17 +31,6 @@ func (ctlr *AdditionServiceController) AddStorage(ctx context.Context, request *
 
 // ---
 
-type FileOperationServiceController struct {
-	pb.UnimplementedFileOperationsManagerServer
-	Server *StorageServer
-}
-
-func newFileOperationServiceController(server *StorageServer) *FileOperationServiceController {
-	return &FileOperationServiceController{
-		Server: server,
-	}
-}
-
 func getFreeSpace() int64 {
 	var stat syscall.Statfs_t
 	wd, _ := os.Getwd()
@@ -49,7 +38,7 @@ func getFreeSpace() int64 {
 	return int64(stat.Bavail * uint64(stat.Bsize))
 }
 
-func (ctlr *FileOperationServiceController) Initialize(ctx context.Context, args *pb.InitializeArgs) (*pb.InitializeResult, error) {
+func (ctlr *StorageServiceController) Initialize(ctx context.Context, args *pb.InitializeArgs) (*pb.InitializeResult, error) {
 	/* Initialize the client storage on a new system,
 	remove any existing file in the dfs root directory and return available size.*/
 
@@ -63,7 +52,7 @@ func (ctlr *FileOperationServiceController) Initialize(ctx context.Context, args
 	}, nil
 }
 
-func (ctlr *FileOperationServiceController) CreateFile(ctx context.Context, args *pb.CreateFileArgs) (*pb.CreateFileResult, error) {
+func (ctlr *StorageServiceController) CreateFile(ctx context.Context, args *pb.CreateFileArgs) (*pb.CreateFileResult, error) {
 	// create a new empty file
 
 	path := StoragePath + args.Path
@@ -81,7 +70,7 @@ func (ctlr *FileOperationServiceController) CreateFile(ctx context.Context, args
 	}}, nil
 }
 
-func (ctlr *FileOperationServiceController) ReadFile(ctx context.Context, args *pb.ReadFileArgs) (response *pb.ReadFileResult, err error) {
+func (ctlr *StorageServiceController) ReadFile(ctx context.Context, args *pb.ReadFileArgs) (response *pb.ReadFileResult, err error) {
 	// download a file from the DFS to the Client side
 
 	path := StoragePath + args.Path
@@ -118,7 +107,7 @@ func (ctlr *FileOperationServiceController) ReadFile(ctx context.Context, args *
 	return response, nil
 }
 
-func (ctlr *FileOperationServiceController) WriteFile(ctx context.Context, args *pb.WriteFileArgs) (*pb.WriteFileResult, error) {
+func (ctlr *StorageServiceController) WriteFile(ctx context.Context, args *pb.WriteFileArgs) (*pb.WriteFileResult, error) {
 
 	path := StoragePath + args.Path
 	fd, err := os.Open(path)
@@ -145,7 +134,7 @@ func (ctlr *FileOperationServiceController) WriteFile(ctx context.Context, args 
 	}}, nil
 }
 
-func (ctlr *FileOperationServiceController) Remove(ctx context.Context, args *pb.RemoveArgs) (*pb.RemoveResult, error) {
+func (ctlr *StorageServiceController) Remove(ctx context.Context, args *pb.RemoveArgs) (*pb.RemoveResult, error) {
 	// allow to delete any file from DFS
 	// allow to delete directory.
 	// If the directory contains files the system asks for confirmation
@@ -165,7 +154,7 @@ func (ctlr *FileOperationServiceController) Remove(ctx context.Context, args *pb
 	}}, nil
 }
 
-func (ctlr *FileOperationServiceController) GetFileInfo(ctx context.Context, args *pb.GetFileInfoArgs) (*pb.GetFileInfoResult, error) {
+func (ctlr *StorageServiceController) GetFileInfo(ctx context.Context, args *pb.GetFileInfoArgs) (*pb.GetFileInfoResult, error) {
 	// provide information about the file (any useful information - size, node id, etc.)
 
 	path := StoragePath + args.Path
@@ -185,17 +174,21 @@ func (ctlr *FileOperationServiceController) GetFileInfo(ctx context.Context, arg
 		FileSize: uint64(fileInfo.Size())}, nil
 }
 
-func (ctlr *FileOperationServiceController) Copy(ctx context.Context, args *pb.CopyArgs) (*pb.CopyResult, error) {
-	//path := StoragePath + args.Path
-	panic("COPY")
+func (ctlr *StorageServiceController) Copy(ctx context.Context, args *pb.CopyArgs) (*pb.CopyResult, error) {
+
+	path := StoragePath + args.Path
+
 }
 
-func (ctlr *FileOperationServiceController) Move(ctx context.Context, args *pb.MoveArgs) (*pb.MoveResult, error) {
-	//	path := StoragePath + args.Path
-	panic("MOVE")
+func (ctlr *StorageServiceController) Move(ctx context.Context, args *pb.MoveArgs) (*pb.MoveResult, error) {
+
+	path := StoragePath + args.Path
+	// update IndexMap: send request to naming server
+	// add a new service into naming_server_imp for handling such a request
+
 }
 
-func (ctlr *FileOperationServiceController) ReadDirectory(ctx context.Context, args *pb.ReadDirectoryArgs) (*pb.ReadDirectoryResult, error) {
+func (ctlr *StorageServiceController) ReadDirectory(ctx context.Context, args *pb.ReadDirectoryArgs) (*pb.ReadDirectoryResult, error) {
 	// return list of files, which are stored in the directory
 
 	path := StoragePath + args.Path
@@ -238,7 +231,7 @@ func (ctlr *FileOperationServiceController) ReadDirectory(ctx context.Context, a
 		Contents: fileInfoEntries}, nil
 }
 
-func (ctlr *FileOperationServiceController) MakeDirectory(ctx context.Context, args *pb.MakeDirectoryArgs) (*pb.MakeDirectoryResult, error) {
+func (ctlr *StorageServiceController) MakeDirectory(ctx context.Context, args *pb.MakeDirectoryArgs) (*pb.MakeDirectoryResult, error) {
 
 	path := StoragePath + args.Path
 	err := os.MkdirAll(path, 0777)
