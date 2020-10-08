@@ -56,6 +56,8 @@ func (ctlr *StorageServiceController) Initialize(ctx context.Context, args *pb.I
 func (ctlr *StorageServiceController) CreateFile(ctx context.Context, args *pb.CreateFileArgs) (*pb.CreateFileResult, error) {
 	// create a new empty file
 
+	// TODO: ensure directory exists before creating file
+
 	path := StoragePath + args.Path
 	_, err := os.Create(path)
 	if err != nil {
@@ -214,6 +216,8 @@ func (ctlr *StorageServiceController) Move(ctx context.Context, args *pb.MoveArg
 
 	// update IndexTree: send request to naming server
 	// add a new service into naming_server_imp for handling such a request
+
+	// TODO: ensure directory exists before creating file
 
 	path := StoragePath + args.Path
 	newPath := StoragePath + args.NewPath
