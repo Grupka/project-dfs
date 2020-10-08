@@ -175,14 +175,17 @@ func (ctlr *StorageServiceController) GetFileInfo(ctx context.Context, args *pb.
 }
 
 func (ctlr *StorageServiceController) Copy(ctx context.Context, args *pb.CopyArgs) (*pb.CopyResult, error) {
+	panic("Copy not implemented")
 
-	path := StoragePath + args.Path
+	//path := StoragePath + args.Path
 
 }
 
 func (ctlr *StorageServiceController) Move(ctx context.Context, args *pb.MoveArgs) (*pb.MoveResult, error) {
+	panic("Move not implemented")
 
-	path := StoragePath + args.Path
+	//path := StoragePath + args.Path
+
 	// update IndexMap: send request to naming server
 	// add a new service into naming_server_imp for handling such a request
 

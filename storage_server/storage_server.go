@@ -59,7 +59,7 @@ func initStorageServer() *StorageServer {
 
 func CheckError(err error) {
 	if err != nil {
-		println("error serving gRPC server %s", err)
+		println("error serving gRPC storage server:", err.Error())
 		os.Exit(1)
 	}
 }
