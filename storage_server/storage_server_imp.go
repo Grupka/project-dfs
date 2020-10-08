@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"project-dfs/pb"
+	"strings"
 	"syscall"
 )
 
@@ -53,12 +54,29 @@ func (ctlr *StorageServiceController) Initialize(ctx context.Context, args *pb.I
 	}, nil
 }
 
+func DoesDirectoryExist(path string) (bool, string) {
+	lastIndexSlash := strings.LastIndex(path, "/")
+	directoryPath := path[:lastIndexSlash]
+	_, err := os.Stat(directoryPath)
+
+	return !os.IsNotExist(err), directoryPath
+}
+
 func (ctlr *StorageServiceController) CreateFile(ctx context.Context, args *pb.CreateFileArgs) (*pb.CreateFileResult, error) {
 	// create a new empty file
-
-	// TODO: ensure directory exists before creating file
-
 	path := StoragePath + args.Path
+	exists, directoryPath := DoesDirectoryExist(path)
+
+	if !exists {
+		errDir := os.MkdirAll(directoryPath, 0777)
+		if errDir != nil {
+			return &pb.CreateFileResult{ErrorStatus: &pb.ErrorStatus{
+				Code:        1,
+				Description: errDir.Error(),
+			}}, nil
+		}
+	}
+
 	_, err := os.Create(path)
 	if err != nil {
 		return &pb.CreateFileResult{ErrorStatus: &pb.ErrorStatus{
@@ -181,6 +199,28 @@ func (ctlr *StorageServiceController) Copy(ctx context.Context, args *pb.CopyArg
 
 	path := StoragePath + args.Path
 	newPath := StoragePath + args.NewPath
+	exists, directoryPath := DoesDirectoryExist(path)
+	existsNew, directoryNewPath := DoesDirectoryExist(newPath)
+
+	if !exists {
+		errDir := os.MkdirAll(directoryPath, 0777)
+		if errDir != nil {
+			return &pb.CopyResult{ErrorStatus: &pb.ErrorStatus{
+				Code:        1,
+				Description: errDir.Error(),
+			}}, nil
+		}
+	}
+
+	if !existsNew {
+		errDir := os.MkdirAll(directoryNewPath, 0777)
+		if errDir != nil {
+			return &pb.CopyResult{ErrorStatus: &pb.ErrorStatus{
+				Code:        1,
+				Description: errDir.Error(),
+			}}, nil
+		}
+	}
 
 	src, err := os.Open(path)
 	if err != nil {
@@ -217,10 +257,30 @@ func (ctlr *StorageServiceController) Move(ctx context.Context, args *pb.MoveArg
 	// update IndexTree: send request to naming server
 	// add a new service into naming_server_imp for handling such a request
 
-	// TODO: ensure directory exists before creating file
-
 	path := StoragePath + args.Path
 	newPath := StoragePath + args.NewPath
+	exists, directoryPath := DoesDirectoryExist(path)
+	existsNew, directoryNewPath := DoesDirectoryExist(newPath)
+
+	if !exists {
+		errDir := os.MkdirAll(directoryPath, 0777)
+		if errDir != nil {
+			return &pb.MoveResult{ErrorStatus: &pb.ErrorStatus{
+				Code:        1,
+				Description: errDir.Error(),
+			}}, nil
+		}
+	}
+
+	if !existsNew {
+		errDir := os.MkdirAll(directoryNewPath, 0777)
+		if errDir != nil {
+			return &pb.MoveResult{ErrorStatus: &pb.ErrorStatus{
+				Code:        1,
+				Description: errDir.Error(),
+			}}, nil
+		}
+	}
 
 	err := os.Rename(path, newPath)
 	if err != nil {
