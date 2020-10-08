@@ -65,8 +65,7 @@ message ReadFileResult {
 message WriteFileArgs {
   string path = 1;
   int64 offset = 2;
-  int64 count = 3;
-  bytes buffer = 4;
+  bytes buffer = 3;
 }
 
 message WriteFileResult {

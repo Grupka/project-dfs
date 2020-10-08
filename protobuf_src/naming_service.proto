@@ -25,8 +25,8 @@ service Naming {
   // Removes the directory with specified name from the index and notifies storage servers about directory removal.
   rpc DeleteDirectory(DeleteRequest) returns (DeleteResult) {}
 
-  // Moves the file with the specified name in the index and notifies storage servers about file move.
-  rpc MoveFile(MoveRequest) returns (NMoveResult) {}
+  // Moves the file OR directory with the specified name in the index and notifies storage servers about move.
+  rpc Move(MoveRequest) returns (NMoveResult) {}
 
   // Creates a directory in the index and notifies storage servers about newly created directory.
   rpc MakeDirectory(MakeDirectoryRequest) returns (MakeDirectoryResult) {}

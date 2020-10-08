@@ -56,14 +56,11 @@ func (node *DfsNode) Unlink(ctx context.Context, name string) syscall.Errno {
 
 	client := node.Client.NamingServerClient
 
-	// Find the appropriate storage server
-	//opClient := node.Client.GetStorageServerForPath(path)
-
 	info := pb.DeleteRequest{
 		Path: path,
 	}
 
-	result, err := opClient.Remove(ctx, &info)
+	result, err := client.DeleteFile(ctx, &info)
 	if err != nil {
 		println("error occurred during unlink:", err)
 		return syscall.EAGAIN
@@ -76,14 +73,13 @@ func (node *DfsNode) Unlink(ctx context.Context, name string) syscall.Errno {
 func (node *DfsNode) Rmdir(ctx context.Context, name string) syscall.Errno {
 	path := node.Path() + "/" + name
 
-	// Find the appropriate storage server
-	opClient := node.Client.GetStorageServerForPath(path)
+	client := node.Client.NamingServerClient
 
-	info := pb.RemoveArgs{
+	info := pb.DeleteRequest{
 		Path: path,
 	}
 
-	result, err := opClient.Remove(ctx, &info)
+	result, err := client.DeleteDirectory(ctx, &info)
 	if err != nil {
 		println("error occurred during rmdir:", err)
 		return syscall.EAGAIN
@@ -114,6 +110,11 @@ func (node *DfsNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off
 	// Find the appropriate storage server
 	opClient := node.Client.GetStorageServerForPath(path)
 
+	if opClient == nil {
+		println("read: no storage server found for", path)
+		return nil, syscall.ENOENT
+	}
+
 	info := pb.ReadFileArgs{
 		Path:   path,
 		Offset: off,
@@ -141,11 +142,14 @@ func (node *DfsNode) Write(ctx context.Context, f fs.FileHandle, data []byte, of
 	// Find the appropriate storage server
 	opClient := node.Client.GetStorageServerForPath(path)
 
+	if opClient == nil {
+		println("write: no storage server found for", path)
+		return 0, syscall.ENOENT
+	}
+
 	info := pb.WriteFileArgs{
 		Path:   path,
 		Offset: off,
-		// TODO: remove count, as it is derivable from the buffer
-		Count:  int64(len(data)),
 		Buffer: data,
 	}
 
@@ -165,15 +169,15 @@ func (node *DfsNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) 
 	path := node.Path()
 
 	// Find the appropriate storage server
-	opClient := node.Client.GetStorageServerForPath(path)
+	opClient := node.Client.NamingServerClient
 
-	info := pb.ReadDirectoryArgs{
+	info := pb.ListDirectoryRequest{
 		Path: path,
 	}
 
-	result, err := opClient.ReadDirectory(ctx, &info)
+	result, err := opClient.ListDirectory(ctx, &info)
 	if err != nil {
-		println("error occurred during rmdir:", err)
+		println("error occurred during readdir:", err)
 		return nil, syscall.EAGAIN
 	}
 
@@ -198,13 +202,13 @@ func (node *DfsNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut
 	path := node.Path()
 
 	// Find the appropriate storage server
-	opClient := node.Client.GetStorageServerForPath(path)
+	opClient := node.Client.NamingServerClient
 
-	info := pb.ReadDirectoryArgs{
+	info := pb.ListDirectoryRequest{
 		Path: path,
 	}
 
-	result, err := opClient.ReadDirectory(ctx, &info)
+	result, err := opClient.ListDirectory(ctx, &info)
 	if err != nil {
 		println("error occurred during lookup:", err)
 		return nil, syscall.EAGAIN
@@ -234,9 +238,9 @@ func (node *DfsNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut
 func (node *DfsNode) Create(ctx context.Context, name string, flags uint32, mode uint32, out *fuse.EntryOut) (n *fs.Inode, fh fs.FileHandle, fuseFlags uint32, errno syscall.Errno) {
 	path := node.Path() + "/" + name
 
-	opClient := node.Client.GetRandomStorageServer()
+	opClient := node.Client.NamingServerClient
 
-	info := pb.CreateFileArgs{
+	info := pb.CreateFileRequest{
 		Path: path,
 	}
 
@@ -257,13 +261,14 @@ func (node *DfsNode) Create(ctx context.Context, name string, flags uint32, mode
 func (node *DfsNode) Rename(ctx context.Context, name string, newParent fs.InodeEmbedder, newName string, flags uint32) syscall.Errno {
 	path := node.Path() + "/" + name
 	_newParent := (*DfsNode)(unsafe.Pointer(newParent.EmbeddedInode()))
+	newPath := _newParent.Path() + "/" + newName
 
 	// Find the appropriate storage server
-	opClient := node.Client.GetStorageServerForPath(path)
+	opClient := node.Client.NamingServerClient
 
-	info := pb.MoveArgs{
+	info := pb.MoveRequest{
 		Path:    path,
-		NewPath: _newParent.Path() + "/" + newName,
+		NewPath: newPath,
 	}
 
 	result, err := opClient.Move(ctx, &info)
@@ -279,15 +284,15 @@ func (node *DfsNode) Rename(ctx context.Context, name string, newParent fs.Inode
 func (node *DfsNode) Mkdir(ctx context.Context, name string, mode uint32, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
 	path := node.Path()
 
-	opClient := node.Client.GetRandomStorageServer()
+	opClient := node.Client.NamingServerClient
 
-	info := pb.MakeDirectoryArgs{
+	info := pb.MakeDirectoryRequest{
 		Path: path,
 	}
 
 	result, err := opClient.MakeDirectory(ctx, &info)
 	if err != nil {
-		println("error occurred during create:", err)
+		println("error occurred during mkdir:", err)
 		return nil, syscall.EAGAIN
 	}
 

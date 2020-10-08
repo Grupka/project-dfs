@@ -30,8 +30,8 @@ type NamingClient interface {
 	DeleteFile(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResult, error)
 	// Removes the directory with specified name from the index and notifies storage servers about directory removal.
 	DeleteDirectory(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResult, error)
-	// Moves the file with the specified name in the index and notifies storage servers about file move.
-	MoveFile(ctx context.Context, in *MoveRequest, opts ...grpc.CallOption) (*NMoveResult, error)
+	// Moves the file OR directory with the specified name in the index and notifies storage servers about move.
+	Move(ctx context.Context, in *MoveRequest, opts ...grpc.CallOption) (*NMoveResult, error)
 	// Creates a directory in the index and notifies storage servers about newly created directory.
 	MakeDirectory(ctx context.Context, in *MakeDirectoryRequest, opts ...grpc.CallOption) (*MakeDirectoryResult, error)
 	// Retrieves list of the directory contents from the index.
@@ -100,9 +100,9 @@ func (c *namingClient) DeleteDirectory(ctx context.Context, in *DeleteRequest, o
 	return out, nil
 }
 
-func (c *namingClient) MoveFile(ctx context.Context, in *MoveRequest, opts ...grpc.CallOption) (*NMoveResult, error) {
+func (c *namingClient) Move(ctx context.Context, in *MoveRequest, opts ...grpc.CallOption) (*NMoveResult, error) {
 	out := new(NMoveResult)
-	err := c.cc.Invoke(ctx, "/pb.Naming/MoveFile", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/pb.Naming/Move", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -144,8 +144,8 @@ type NamingServer interface {
 	DeleteFile(context.Context, *DeleteRequest) (*DeleteResult, error)
 	// Removes the directory with specified name from the index and notifies storage servers about directory removal.
 	DeleteDirectory(context.Context, *DeleteRequest) (*DeleteResult, error)
-	// Moves the file with the specified name in the index and notifies storage servers about file move.
-	MoveFile(context.Context, *MoveRequest) (*NMoveResult, error)
+	// Moves the file OR directory with the specified name in the index and notifies storage servers about move.
+	Move(context.Context, *MoveRequest) (*NMoveResult, error)
 	// Creates a directory in the index and notifies storage servers about newly created directory.
 	MakeDirectory(context.Context, *MakeDirectoryRequest) (*MakeDirectoryResult, error)
 	// Retrieves list of the directory contents from the index.
@@ -175,8 +175,8 @@ func (UnimplementedNamingServer) DeleteFile(context.Context, *DeleteRequest) (*D
 func (UnimplementedNamingServer) DeleteDirectory(context.Context, *DeleteRequest) (*DeleteResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteDirectory not implemented")
 }
-func (UnimplementedNamingServer) MoveFile(context.Context, *MoveRequest) (*NMoveResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MoveFile not implemented")
+func (UnimplementedNamingServer) Move(context.Context, *MoveRequest) (*NMoveResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Move not implemented")
 }
 func (UnimplementedNamingServer) MakeDirectory(context.Context, *MakeDirectoryRequest) (*MakeDirectoryResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MakeDirectory not implemented")
@@ -305,20 +305,20 @@ func _Naming_DeleteDirectory_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Naming_MoveFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Naming_Move_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MoveRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(NamingServer).MoveFile(ctx, in)
+		return srv.(NamingServer).Move(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/pb.Naming/MoveFile",
+		FullMethod: "/pb.Naming/Move",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(NamingServer).MoveFile(ctx, req.(*MoveRequest))
+		return srv.(NamingServer).Move(ctx, req.(*MoveRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -388,8 +388,8 @@ var _Naming_serviceDesc = grpc.ServiceDesc{
 			Handler:    _Naming_DeleteDirectory_Handler,
 		},
 		{
-			MethodName: "MoveFile",
-			Handler:    _Naming_MoveFile_Handler,
+			MethodName: "Move",
+			Handler:    _Naming_Move_Handler,
 		},
 		{
 			MethodName: "MakeDirectory",
