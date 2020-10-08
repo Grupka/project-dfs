@@ -59,7 +59,7 @@ func Mount(path string, node *DfsNode) *fuse.Server {
 		MountOptions: fuse.MountOptions{Debug: true},
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err.Error())
 	}
 
 	fmt.Println("Mounted successfully")

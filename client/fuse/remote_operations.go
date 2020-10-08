@@ -40,7 +40,7 @@ func (node *DfsNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.Att
 	}
 	result, err := opClient.GetFileInfo(ctx, &info)
 	if err != nil {
-		println("error occurred during getattr:", err)
+		println("error occurred during getattr:", err.Error())
 		return syscall.EAGAIN
 	}
 
@@ -62,7 +62,7 @@ func (node *DfsNode) Unlink(ctx context.Context, name string) syscall.Errno {
 
 	result, err := client.DeleteFile(ctx, &info)
 	if err != nil {
-		println("error occurred during unlink:", err)
+		println("error occurred during unlink:", err.Error())
 		return syscall.EAGAIN
 	}
 
@@ -81,7 +81,7 @@ func (node *DfsNode) Rmdir(ctx context.Context, name string) syscall.Errno {
 
 	result, err := client.DeleteDirectory(ctx, &info)
 	if err != nil {
-		println("error occurred during rmdir:", err)
+		println("error occurred during rmdir:", err.Error())
 		return syscall.EAGAIN
 	}
 
@@ -123,7 +123,7 @@ func (node *DfsNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off
 
 	result, err := opClient.ReadFile(ctx, &info)
 	if err != nil {
-		println("error occurred during read:", err)
+		println("error occurred during read:", err.Error())
 		return nil, syscall.EAGAIN
 	}
 
@@ -155,7 +155,7 @@ func (node *DfsNode) Write(ctx context.Context, f fs.FileHandle, data []byte, of
 
 	result, err := opClient.WriteFile(ctx, &info)
 	if err != nil {
-		println("error occurred during write:", err)
+		println("error occurred during write:", err.Error())
 		return 0, syscall.EAGAIN
 	}
 
@@ -177,7 +177,7 @@ func (node *DfsNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) 
 
 	result, err := opClient.ListDirectory(ctx, &info)
 	if err != nil {
-		println("error occurred during readdir:", err)
+		println("error occurred during readdir:", err.Error())
 		return nil, syscall.EAGAIN
 	}
 
@@ -210,7 +210,7 @@ func (node *DfsNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut
 
 	result, err := opClient.ListDirectory(ctx, &info)
 	if err != nil {
-		println("error occurred during lookup:", err)
+		println("error occurred during lookup:", err.Error())
 		return nil, syscall.EAGAIN
 	}
 
@@ -246,7 +246,7 @@ func (node *DfsNode) Create(ctx context.Context, name string, flags uint32, mode
 
 	result, err := opClient.CreateFile(ctx, &info)
 	if err != nil {
-		println("error occurred during create:", err)
+		println("error occurred during create:", err.Error())
 		return nil, nil, 0, syscall.EAGAIN
 	}
 
@@ -273,7 +273,7 @@ func (node *DfsNode) Rename(ctx context.Context, name string, newParent fs.Inode
 
 	result, err := opClient.Move(ctx, &info)
 	if err != nil {
-		println("error occurred during rename:", err)
+		println("error occurred during rename:", err.Error())
 		return syscall.EAGAIN
 	}
 
@@ -292,7 +292,7 @@ func (node *DfsNode) Mkdir(ctx context.Context, name string, mode uint32, out *f
 
 	result, err := opClient.MakeDirectory(ctx, &info)
 	if err != nil {
-		println("error occurred during mkdir:", err)
+		println("error occurred during mkdir:", err.Error())
 		return nil, syscall.EAGAIN
 	}
 

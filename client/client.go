@@ -17,7 +17,7 @@ func (client *Client) GetStorageServerForPath(path string) pb.StorageClient {
 		Path: path,
 	})
 	if err != nil {
-		println("Error while getting storage server for path \""+path+"\":", err)
+		println("Error while getting storage server for path \""+path+"\":", err.Error())
 		return nil
 	}
 	if len(discoverResponse.StorageInfo) == 0 {
@@ -39,7 +39,7 @@ func (client *Client) GetStorageServerByAddress(address string) pb.StorageClient
 	// Connect to the server and save it
 	conn, err := grpc.Dial(address)
 	if err != nil {
-		println("Error occurred during connecting to storage server at \""+address+"\":", err)
+		println("Error occurred during connecting to storage server at \""+address+"\":", err.Error())
 		return nil
 	}
 	server = pb.NewStorageClient(conn)
