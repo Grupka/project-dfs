@@ -232,62 +232,62 @@ func (ctlr *StorageServiceController) Move(ctx context.Context, args *pb.MoveArg
 	}}, nil
 }
 
-func (ctlr *StorageServiceController) ReadDirectory(ctx context.Context, args *pb.ReadDirectoryArgs) (*pb.ReadDirectoryResult, error) {
-	// return list of files, which are stored in the directory
+//func (ctlr *StorageServiceController) ReadDirectory(ctx context.Context, args *pb.ReadDirectoryArgs) (*pb.ReadDirectoryResult, error) {
+//	// return list of files, which are stored in the directory
+//
+//	path := StoragePath + args.Path
+//	fd, err := os.Open(path)
+//	if err != nil {
+//		return &pb.ReadDirectoryResult{ErrorStatus: &pb.ErrorStatus{
+//			Code:        1,
+//			Description: err.Error(),
+//		},
+//			Contents: make([]*pb.Node, 0)}, nil
+//	}
+//
+//	fileInfo, err := fd.Readdir(0)
+//	if err != nil {
+//		return &pb.ReadDirectoryResult{ErrorStatus: &pb.ErrorStatus{
+//			Code:        1,
+//			Description: err.Error(),
+//		},
+//			Contents: make([]*pb.Node, 0)}, nil
+//	}
+//
+//	fileInfoEntries := make([]*pb.Node, len(fileInfo))
+//	var mode pb.NodeMode
+//	for _, entry := range fileInfo {
+//		if entry.IsDir() {
+//			mode = pb.NodeMode_DIRECTORY
+//		} else {
+//			mode = pb.NodeMode_REGULAR_FILE
+//		}
+//		fileInfoEntries = append(fileInfoEntries, &pb.Node{
+//			Mode: mode,
+//			Name: entry.Name(),
+//		})
+//	}
+//
+//	return &pb.ReadDirectoryResult{ErrorStatus: &pb.ErrorStatus{
+//		Code:        0,
+//		Description: "OK",
+//	},
+//		Contents: fileInfoEntries}, nil
+//}
 
-	path := StoragePath + args.Path
-	fd, err := os.Open(path)
-	if err != nil {
-		return &pb.ReadDirectoryResult{ErrorStatus: &pb.ErrorStatus{
-			Code:        1,
-			Description: err.Error(),
-		},
-			Contents: make([]*pb.Node, 0)}, nil
-	}
-
-	fileInfo, err := fd.Readdir(0)
-	if err != nil {
-		return &pb.ReadDirectoryResult{ErrorStatus: &pb.ErrorStatus{
-			Code:        1,
-			Description: err.Error(),
-		},
-			Contents: make([]*pb.Node, 0)}, nil
-	}
-
-	fileInfoEntries := make([]*pb.Node, len(fileInfo))
-	var mode pb.NodeMode
-	for _, entry := range fileInfo {
-		if entry.IsDir() {
-			mode = pb.NodeMode_DIRECTORY
-		} else {
-			mode = pb.NodeMode_REGULAR_FILE
-		}
-		fileInfoEntries = append(fileInfoEntries, &pb.Node{
-			Mode: mode,
-			Name: entry.Name(),
-		})
-	}
-
-	return &pb.ReadDirectoryResult{ErrorStatus: &pb.ErrorStatus{
-		Code:        0,
-		Description: "OK",
-	},
-		Contents: fileInfoEntries}, nil
-}
-
-func (ctlr *StorageServiceController) MakeDirectory(ctx context.Context, args *pb.MakeDirectoryArgs) (*pb.MakeDirectoryResult, error) {
-
-	path := StoragePath + args.Path
-	err := os.MkdirAll(path, 0777)
-	if err != nil {
-		return &pb.MakeDirectoryResult{ErrorStatus: &pb.ErrorStatus{
-			Code:        1,
-			Description: err.Error(),
-		}}, nil
-	}
-
-	return &pb.MakeDirectoryResult{ErrorStatus: &pb.ErrorStatus{
-		Code:        0,
-		Description: "OK",
-	}}, nil
-}
+//func (ctlr *StorageServiceController) MakeDirectory(ctx context.Context, args *pb.MakeDirectoryArgs) (*pb.MakeDirectoryResult, error) {
+//
+//	path := StoragePath + args.Path
+//	err := os.MkdirAll(path, 0777)
+//	if err != nil {
+//		return &pb.MakeDirectoryResult{ErrorStatus: &pb.ErrorStatus{
+//			Code:        1,
+//			Description: err.Error(),
+//		}}, nil
+//	}
+//
+//	return &pb.MakeDirectoryResult{ErrorStatus: &pb.ErrorStatus{
+//		Code:        0,
+//		Description: "OK",
+//	}}, nil
+//}

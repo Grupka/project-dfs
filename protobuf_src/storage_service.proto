@@ -2,8 +2,12 @@ syntax = 'proto3';
 package pb;
 option go_package = ".;pb";
 
+import "common.proto";
+
+
 service Storage {
   rpc AddStorage(AddRequest) returns (AddResponse) {}
+
   rpc Initialize(InitializeArgs) returns (InitializeResult) {};
   rpc CreateFile(CreateFileArgs) returns (CreateFileResult) {};
   rpc ReadFile(ReadFileArgs) returns (ReadFileResult) {};
@@ -12,8 +16,6 @@ service Storage {
   rpc GetFileInfo(GetFileInfoArgs) returns (GetFileInfoResult) {};
   rpc Copy(CopyArgs) returns (CopyResult) {};
   rpc Move(MoveArgs) returns (MoveResult) {};
-  rpc ReadDirectory(ReadDirectoryArgs) returns (ReadDirectoryResult) {};
-  rpc MakeDirectory(MakeDirectoryArgs) returns (MakeDirectoryResult) {};
 }
 
 message AddRequest {
@@ -25,11 +27,6 @@ message AddResponse {
 }
 
 // ---
-
-message ErrorStatus {
-  uint32 code = 1;
-  string description = 2;
-}
 
 message InitializeArgs {
 }
@@ -116,36 +113,5 @@ message MoveArgs {
 }
 
 message MoveResult {
-  ErrorStatus errorStatus = 1;
-}
-
-// ---
-
-message ReadDirectoryArgs {
-  string path = 1;
-}
-
-message ReadDirectoryResult {
-  ErrorStatus errorStatus = 1;
-  repeated Node contents = 2;
-}
-
-enum NodeMode {
-  REGULAR_FILE = 0;
-  DIRECTORY = 1;
-}
-
-message Node {
-  NodeMode mode = 1;
-  string name = 2;
-}
-
-// ---
-
-message MakeDirectoryArgs {
-  string path = 1;
-}
-
-message MakeDirectoryResult {
   ErrorStatus errorStatus = 1;
 }

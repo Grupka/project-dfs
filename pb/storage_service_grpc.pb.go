@@ -26,8 +26,6 @@ type StorageClient interface {
 	GetFileInfo(ctx context.Context, in *GetFileInfoArgs, opts ...grpc.CallOption) (*GetFileInfoResult, error)
 	Copy(ctx context.Context, in *CopyArgs, opts ...grpc.CallOption) (*CopyResult, error)
 	Move(ctx context.Context, in *MoveArgs, opts ...grpc.CallOption) (*MoveResult, error)
-	ReadDirectory(ctx context.Context, in *ReadDirectoryArgs, opts ...grpc.CallOption) (*ReadDirectoryResult, error)
-	MakeDirectory(ctx context.Context, in *MakeDirectoryArgs, opts ...grpc.CallOption) (*MakeDirectoryResult, error)
 }
 
 type storageClient struct {
@@ -119,24 +117,6 @@ func (c *storageClient) Move(ctx context.Context, in *MoveArgs, opts ...grpc.Cal
 	return out, nil
 }
 
-func (c *storageClient) ReadDirectory(ctx context.Context, in *ReadDirectoryArgs, opts ...grpc.CallOption) (*ReadDirectoryResult, error) {
-	out := new(ReadDirectoryResult)
-	err := c.cc.Invoke(ctx, "/pb.Storage/ReadDirectory", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *storageClient) MakeDirectory(ctx context.Context, in *MakeDirectoryArgs, opts ...grpc.CallOption) (*MakeDirectoryResult, error) {
-	out := new(MakeDirectoryResult)
-	err := c.cc.Invoke(ctx, "/pb.Storage/MakeDirectory", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // StorageServer is the server API for Storage service.
 // All implementations must embed UnimplementedStorageServer
 // for forward compatibility
@@ -150,8 +130,6 @@ type StorageServer interface {
 	GetFileInfo(context.Context, *GetFileInfoArgs) (*GetFileInfoResult, error)
 	Copy(context.Context, *CopyArgs) (*CopyResult, error)
 	Move(context.Context, *MoveArgs) (*MoveResult, error)
-	ReadDirectory(context.Context, *ReadDirectoryArgs) (*ReadDirectoryResult, error)
-	MakeDirectory(context.Context, *MakeDirectoryArgs) (*MakeDirectoryResult, error)
 	mustEmbedUnimplementedStorageServer()
 }
 
@@ -185,12 +163,6 @@ func (UnimplementedStorageServer) Copy(context.Context, *CopyArgs) (*CopyResult,
 }
 func (UnimplementedStorageServer) Move(context.Context, *MoveArgs) (*MoveResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Move not implemented")
-}
-func (UnimplementedStorageServer) ReadDirectory(context.Context, *ReadDirectoryArgs) (*ReadDirectoryResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ReadDirectory not implemented")
-}
-func (UnimplementedStorageServer) MakeDirectory(context.Context, *MakeDirectoryArgs) (*MakeDirectoryResult, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MakeDirectory not implemented")
 }
 func (UnimplementedStorageServer) mustEmbedUnimplementedStorageServer() {}
 
@@ -367,42 +339,6 @@ func _Storage_Move_Handler(srv interface{}, ctx context.Context, dec func(interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Storage_ReadDirectory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReadDirectoryArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(StorageServer).ReadDirectory(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pb.Storage/ReadDirectory",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StorageServer).ReadDirectory(ctx, req.(*ReadDirectoryArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Storage_MakeDirectory_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(MakeDirectoryArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(StorageServer).MakeDirectory(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pb.Storage/MakeDirectory",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StorageServer).MakeDirectory(ctx, req.(*MakeDirectoryArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var _Storage_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "pb.Storage",
 	HandlerType: (*StorageServer)(nil),
@@ -443,15 +379,7 @@ var _Storage_serviceDesc = grpc.ServiceDesc{
 			MethodName: "Move",
 			Handler:    _Storage_Move_Handler,
 		},
-		{
-			MethodName: "ReadDirectory",
-			Handler:    _Storage_ReadDirectory_Handler,
-		},
-		{
-			MethodName: "MakeDirectory",
-			Handler:    _Storage_MakeDirectory_Handler,
-		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "storage_services.proto",
+	Metadata: "storage_service.proto",
 }

@@ -1,0 +1,118 @@
+syntax = 'proto3';
+package pb;
+option go_package = ".;pb";
+
+import "common.proto";
+
+
+service Naming {
+  // Registers storage server in the naming server
+  rpc Register(RegRequest) returns (RegResponse) {}
+
+  // Fetches the file index to obtain list of storage servers that hold the requested path
+  rpc Discover(DiscoverRequest) returns (DiscoverResponse) {}
+
+  // Removes the file with specified name from the index and notifies storage servers about file removal
+  rpc DeleteFile(DeleteRequest) returns (DeleteResult) {}
+
+  // Removes the directory with specified name from the index and notifies storage servers about directory removal
+  rpc DeleteDirectory(DeleteRequest) returns (DeleteResult) {}
+
+  // Moves the file with the specified name in the index and notifies storage servers about file move
+  rpc MoveFile(MoveRequest) returns (NMoveResult) {}
+
+  // Creates a directory in the index and notifies storage servers about newly created directory
+  rpc MakeDirectory(MakeDirectoryRequest) returns (MakeDirectoryResult) {}
+
+  // Retrieves list of the directory contents from the index
+  rpc ListDirectory(ListDirectoryRequest) returns (ListDirectoryResult) {}
+}
+
+message DiscoverRequest {
+  string path = 1;
+}
+
+message DiscoveredStorage {
+  string alias = 1;
+  string address = 2;
+}
+
+message DiscoverResponse {
+  repeated DiscoveredStorage storageInfo = 1;
+}
+
+// ---
+
+message RegRequest {
+  string serverAlias = 1;
+}
+
+enum Status {
+  ACCEPT = 0;
+  DECLINE = 1;
+}
+
+message RegResponse {
+  Status status = 1;
+}
+
+// ---
+
+message DeleteRequest {
+
+}
+
+message DeleteResult {
+
+}
+
+// ---
+
+message MoveRequest {
+
+}
+
+message NMoveResult {
+
+}
+
+// ---
+
+message MakeDirectoryRequest {
+
+}
+
+message MakeDirectoryResult {
+
+}
+
+// ---
+
+message ReadDirectoryArgs {
+  string path = 1;
+}
+
+message ReadDirectoryResult {
+  ErrorStatus errorStatus = 1;
+  repeated Node contents = 2;
+}
+
+enum NodeMode {
+  REGULAR_FILE = 0;
+  DIRECTORY = 1;
+}
+
+message Node {
+  NodeMode mode = 1;
+  string name = 2;
+}
+
+message ListDirectoryRequest {
+
+}
+
+message ListDirectoryResult {
+
+}
+
+

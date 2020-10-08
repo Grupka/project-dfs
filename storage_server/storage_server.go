@@ -26,7 +26,6 @@ func (server *StorageServer) SetMap(newKey string, newValue string) {
 }
 
 func initStorageServer() *StorageServer {
-
 	// Obtain local address from environment
 	localAddress := os.Getenv("ADDRESS")
 	if localAddress == "" {

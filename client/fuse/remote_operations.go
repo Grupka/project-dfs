@@ -22,10 +22,17 @@ var _ = (fs.FileWriter)((*DfsHandle)(nil))
 
 // In our case, the most important things here are report file size and permissions (mode).
 func (node *DfsNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
+	path := node.Path()
+
 	out.Mode = 0777
 
 	// Find the appropriate storage server
-	opClient := node.Client.GetStorageServerForPath(node.Path())
+	opClient := node.Client.GetStorageServerForPath(path)
+
+	if opClient == nil {
+		println("getattr: no storage server found for", path)
+		return syscall.ENOENT
+	}
 
 	// Do the request to storage server
 	info := pb.GetFileInfoArgs{
