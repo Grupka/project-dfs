@@ -2,7 +2,8 @@ syntax = 'proto3';
 package pb;
 option go_package = ".;pb";
 
-service StorageDiscovery {
+service Naming {
+  rpc Register(RegRequest) returns (RegResponse) {}
   rpc Discover(DiscoverRequest) returns (DiscoverResponse) {}
 }
 
@@ -17,4 +18,17 @@ message DiscoveredStorage {
 
 message DiscoverResponse {
   repeated DiscoveredStorage storageInfo = 1;
+}
+
+message RegRequest {
+  string serverAlias = 1;
+}
+
+enum Status {
+  ACCEPT = 0;
+  DECLINE = 1;
+}
+
+message RegResponse {
+  Status status = 1;
 }

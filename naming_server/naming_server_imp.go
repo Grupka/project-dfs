@@ -8,20 +8,20 @@ import (
 	"project-dfs/pb"
 )
 
-type RegistrationServiceController struct {
-	pb.UnimplementedRegistrationServer
-	metadata *NamingServer
+type NamingServerController struct {
+	pb.UnimplementedNamingServer
+	Server *NamingServer
 }
 
 //returns the pointer to the implementation
-func NewRegistrationServiceController(metadataParam *NamingServer) *RegistrationServiceController {
-	return &RegistrationServiceController{
-		metadata: metadataParam,
+func NewNamingServiceController(server *NamingServer) *NamingServerController {
+	return &NamingServerController{
+		Server: server,
 	}
 }
 
-func (ctlr *RegistrationServiceController) Register(ctx context.Context, request *pb.RegRequest) (*pb.RegResponse, error) {
-	// update address map on the NAMING server
+func (ctlr *NamingServerController) Register(ctx context.Context, request *pb.RegRequest) (*pb.RegResponse, error) {
+	// update address map on the NAMING Server
 
 	otherPeer, ok := peer.FromContext(ctx)
 	if !ok {
@@ -29,17 +29,17 @@ func (ctlr *RegistrationServiceController) Register(ctx context.Context, request
 		return &pb.RegResponse{Status: pb.Status_DECLINE}, errors.New("other peer not found")
 	}
 
-	// add a new server to the list of known Storage Servers
+	// add a new Server to the list of known Storage Servers
 	peerAddress := otherPeer.Addr
-	ctlr.metadata.SetAddressMap(request.ServerAlias, peerAddress.String())
+	ctlr.Server.SetAddressMap(request.ServerAlias, peerAddress.String())
 
 	// broadcast the address to all other Storage Servers
-	for key, element := range ctlr.metadata.StorageAddresses {
+	for key, element := range ctlr.Server.StorageAddresses {
 		if key == request.ServerAlias {
 			continue
 		}
 		conn, err := grpc.Dial(element, grpc.WithInsecure())
-		client := pb.NewStorageAdditionClient(conn)
+		client := pb.NewStorageClient(conn)
 		client.AddStorage(context.Background(),
 			&pb.AddRequest{ServerAlias: request.ServerAlias, ServerAddress: peerAddress.String()})
 		CheckError(err)
@@ -48,18 +48,7 @@ func (ctlr *RegistrationServiceController) Register(ctx context.Context, request
 	return &pb.RegResponse{Status: pb.Status_ACCEPT}, nil
 }
 
-type DiscoveryServiceController struct {
-	pb.UnimplementedStorageDiscoveryServer
-	metadata *NamingServer
-}
-
-func NewDiscoveryServiceController(metadataParam *NamingServer) *DiscoveryServiceController {
-	return &DiscoveryServiceController{
-		metadata: metadataParam,
-	}
-}
-
-func (ctlr *DiscoveryServiceController) Discover(ctx context.Context, request *pb.DiscoverRequest) (response *pb.DiscoverResponse, err error) {
+func (ctlr *NamingServerController) Discover(ctx context.Context, request *pb.DiscoverRequest) (response *pb.DiscoverResponse, err error) {
 
 	// key is the file's path
 	// element is StorageInfo struct
@@ -67,7 +56,7 @@ func (ctlr *DiscoveryServiceController) Discover(ctx context.Context, request *p
 	// if path == "" return ALL storage servers
 	if request.Path == "" {
 		storages := make([]*pb.DiscoveredStorage, 0)
-		for alias, address := range ctlr.metadata.StorageAddresses {
+		for alias, address := range ctlr.Server.StorageAddresses {
 			storages = append(storages, &pb.DiscoveredStorage{
 				Alias:   alias,
 				Address: address,
@@ -76,7 +65,7 @@ func (ctlr *DiscoveryServiceController) Discover(ctx context.Context, request *p
 		return &pb.DiscoverResponse{StorageInfo: storages}, nil
 	}
 
-	for key, element := range ctlr.metadata.IndexMap {
+	for key, element := range ctlr.Server.IndexMap {
 		if key == request.Path {
 			// if found file
 
@@ -85,7 +74,7 @@ func (ctlr *DiscoveryServiceController) Discover(ctx context.Context, request *p
 			for _, alias := range element.ServersList {
 				storages = append(storages, &pb.DiscoveredStorage{
 					Alias:   alias,
-					Address: ctlr.metadata.StorageAddresses[alias],
+					Address: ctlr.Server.StorageAddresses[alias],
 				})
 			}
 

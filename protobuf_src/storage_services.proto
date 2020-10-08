@@ -2,8 +2,8 @@ syntax = 'proto3';
 package pb;
 option go_package = ".;pb";
 
-
-service FileOperationsManager {
+service Storage {
+  rpc AddStorage(AddRequest) returns (AddResponse) {}
   rpc Initialize(InitializeArgs) returns (InitializeResult) {};
   rpc CreateFile(CreateFileArgs) returns (CreateFileResult) {};
   rpc ReadFile(ReadFileArgs) returns (ReadFileResult) {};
@@ -15,6 +15,16 @@ service FileOperationsManager {
   rpc ReadDirectory(ReadDirectoryArgs) returns (ReadDirectoryResult) {};
   rpc MakeDirectory(MakeDirectoryArgs) returns (MakeDirectoryResult) {};
 }
+
+message AddRequest {
+  string serverAlias = 1;
+  string serverAddress = 2;
+}
+
+message AddResponse {
+}
+
+// ---
 
 message ErrorStatus {
   uint32 code = 1;

@@ -10,7 +10,7 @@ import (
 )
 
 type StorageInfo struct {
-	ServersList []string // server's aliases
+	ServersList []string // Server's aliases
 }
 
 type NamingServer struct {
@@ -44,24 +44,24 @@ func initNamingServer() *NamingServer {
 
 func CheckError(err error) {
 	if err != nil {
-		println("Error serving gRPC server:", err)
+		println("Error serving gRPC Server:", err)
 		os.Exit(1)
 	}
 }
 
 func Run() {
-	metadata := initNamingServer()
+	server := initNamingServer()
 
 	println("Initialized metadata: ")
-	fmt.Printf("%+v\n", metadata)
+	fmt.Printf("%+v\n", server)
 
-	listener, err := net.Listen("tcp", metadata.LocalAddress)
+	listener, err := net.Listen("tcp", server.LocalAddress)
 	CheckError(err)
-	println("Listening on " + metadata.LocalAddress)
+	println("Listening on " + server.LocalAddress)
 
-	regController := NewRegistrationServiceController(metadata)
+	namingController := NewNamingServiceController(server)
 	grpcServer := grpc.NewServer()
-	pb.RegisterRegistrationServer(grpcServer, regController)
+	pb.RegisterNamingServer(grpcServer, namingController)
 	err = grpcServer.Serve(listener)
 	CheckError(err)
 }
