@@ -88,15 +88,28 @@ func (ctlr *NamingServerController) Discover(ctx context.Context, request *pb.Di
 // ---
 
 func (ctlr *NamingServerController) CreateFile(ctx context.Context, request *pb.CreateFileRequest) (*pb.CreateFileResponse, error) {
+	// client sends path
+	// traverse index tree and find node parent for the path
+	// add child with file name
+	// find 2 random storages
+	// contact them to create the file
 
 }
 
 func (ctlr *NamingServerController) Move(ctx context.Context, request *pb.MoveRequest) (*pb.MoveResponse, error) {
+	// client sends paths: old and new
+	// traverse index tree and find node
 
+	// find storages with the file
+	// contact them to move the file
 }
 
 func (ctlr *NamingServerController) DeleteFile(ctx context.Context, request *pb.DeleteRequest) (*pb.DeleteResponse, error) {
-
+	// client sends path
+	// traverse index tree and find node parent for the path
+	// delete child with file name
+	// find storages with the file
+	// contact them to delete the file
 }
 
 func (ctlr *NamingServerController) Copy(ctx context.Context, request *pb.CopyRequest) (*pb.CopyResponse, error) {
@@ -104,13 +117,23 @@ func (ctlr *NamingServerController) Copy(ctx context.Context, request *pb.CopyRe
 }
 
 func (ctlr *NamingServerController) DeleteDirectory(ctx context.Context, request *pb.DeleteRequest) (*pb.DeleteResponse, error) {
-
+	// client sends path
+	// traverse index tree and find node parent for the path
+	// delete child with directory name
+	// find storages with the directory
+	// contact them to delete the directory
 }
 
 func (ctlr *NamingServerController) MakeDirectory(ctx context.Context, request *pb.MakeDirectoryRequest) (*pb.MakeDirectoryResponse, error) {
-
+	// client sends path
+	// traverse index tree and find node parent for the path
+	// add child with file name
+	// find 2 random storages
+	// contact them to make the directory
 }
 
 func (ctlr *NamingServerController) ListDirectory(ctx context.Context, request *pb.ListDirectoryRequest) (*pb.ListDirectoryResponse, error) {
-
+	// client sends path
+	// traverse index tree and find node
+	// return all children of the node
 }
