@@ -24,7 +24,7 @@ func TestMount(t *testing.T) {
 	}
 
 	c := &client.Client{
-		NamingServerClient: pb.NewStorageDiscoveryClient(conn),
+		NamingServerClient: pb.NewNamingClient(conn),
 	}
 
 	root := fuse.NewDfsNode(c, "")
