@@ -3,9 +3,12 @@ package naming_server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
+	utils "project-dfs"
 	"project-dfs/pb"
+	"syscall"
 )
 
 type NamingServerController struct {
@@ -13,16 +16,15 @@ type NamingServerController struct {
 	Server *NamingServer
 }
 
-//returns the pointer to the implementation
+// returns the pointer to the implementation
 func NewNamingServiceController(server *NamingServer) *NamingServerController {
 	return &NamingServerController{
 		Server: server,
 	}
 }
 
+// update address map on the NAMING Server
 func (ctlr *NamingServerController) Register(ctx context.Context, request *pb.RegRequest) (*pb.RegResponse, error) {
-	// update address map on the NAMING Server
-
 	otherPeer, ok := peer.FromContext(ctx)
 	if !ok {
 		println("other peer not found")
@@ -39,20 +41,21 @@ func (ctlr *NamingServerController) Register(ctx context.Context, request *pb.Re
 			continue
 		}
 		conn, err := grpc.Dial(element, grpc.WithInsecure())
+		CheckError(err)
 		client := pb.NewStorageClient(conn)
-		client.AddStorage(context.Background(),
-			&pb.AddRequest{ServerAlias: request.ServerAlias, ServerAddress: peerAddress.String()})
+		_, err = client.AddStorage(context.Background(), &pb.AddRequest{
+			ServerAlias:   request.ServerAlias,
+			ServerAddress: peerAddress.String(),
+		})
 		CheckError(err)
 	}
 
 	return &pb.RegResponse{Status: pb.Status_ACCEPT}, nil
 }
 
+// key is the file's path
+// element is StorageInfo struct
 func (ctlr *NamingServerController) Discover(ctx context.Context, request *pb.DiscoverRequest) (response *pb.DiscoverResponse, err error) {
-
-	// key is the file's path
-	// element is StorageInfo struct
-
 	// if path == "" return ALL storage servers
 	if request.Path == "" {
 		storages := make([]*pb.DiscoveredStorage, 0)
@@ -65,22 +68,23 @@ func (ctlr *NamingServerController) Discover(ctx context.Context, request *pb.Di
 		return &pb.DiscoverResponse{StorageInfo: storages}, nil
 	}
 
-	for key, element := range ctlr.Server.IndexMap {
-		if key == request.Path {
-			// if found file
+	node, ok := ctlr.Server.FindNode(request.Path)
+	if !ok {
+		return &pb.DiscoverResponse{
+			StorageInfo: []*pb.DiscoveredStorage{},
+		}, nil
+	}
 
-			response = &pb.DiscoverResponse{}
-			storages := make([]*pb.DiscoveredStorage, 0)
-			for _, alias := range element.ServersList {
-				storages = append(storages, &pb.DiscoveredStorage{
-					Alias:   alias,
-					Address: ctlr.Server.StorageAddresses[alias],
-				})
-			}
+	storages := make([]*pb.DiscoveredStorage, 0)
+	for _, storage := range node.Storages {
+		storages = append(storages, &pb.DiscoveredStorage{
+			Alias:   storage.Alias,
+			Address: ctlr.Server.StorageAddresses[storage.Alias],
+		})
+	}
 
-			response.StorageInfo = storages
-			return response, nil
-		}
+	response = &pb.DiscoverResponse{
+		StorageInfo: storages,
 	}
 	return &pb.DiscoverResponse{StorageInfo: make([]*pb.DiscoveredStorage, 0)}, nil
 }
@@ -94,6 +98,37 @@ func (ctlr *NamingServerController) CreateFile(ctx context.Context, request *pb.
 	// find 2 random storages
 	// contact them to create the file
 
+	//ok, dir := utils.DoesDirectoryExist(request.Path)
+	//if !ok {
+	//	_ = os.MkdirAll(dir, 0777)
+	//}
+
+	fmt.Println("CreateFile:", request.Path)
+
+	node := ctlr.Server.CreateNodeIfNotExists(request.Path, true)
+	servers := ctlr.Server.Get2RandomStorageServers()
+	for _, s := range servers {
+		server := ctlr.Server.GetStorageServer(s.Address)
+		response, err := server.CreateFile(ctx, &pb.CreateFileArgs{Path: request.Path})
+		if err != nil {
+			println("Error creating file:", err.Error())
+			return nil, err
+		}
+		if response.ErrorStatus.Code != 0 {
+			println("Error during file creation:", response.ErrorStatus.Description)
+			return &pb.CreateFileResponse{
+				ErrorStatus: &pb.ErrorStatus{
+					Code:        response.ErrorStatus.Code,
+					Description: response.ErrorStatus.Description,
+				}}, nil
+		}
+		node.Storages = append(node.Storages, &StorageInfo{Alias: s.Alias})
+	}
+
+	return &pb.CreateFileResponse{ErrorStatus: &pb.ErrorStatus{
+		Code:        0,
+		Description: "",
+	}}, nil
 }
 
 func (ctlr *NamingServerController) Move(ctx context.Context, request *pb.MoveRequest) (*pb.MoveResponse, error) {
@@ -102,6 +137,37 @@ func (ctlr *NamingServerController) Move(ctx context.Context, request *pb.MoveRe
 
 	// find storages with the file
 	// contact them to move the file
+
+	oldParent, ok := ctlr.Server.FindNode(utils.DirPart(request.Path))
+	if !ok {
+		return &pb.MoveResponse{ErrorStatus: &pb.ErrorStatus{
+			Code:        1,
+			Description: "Old parent node does not exist",
+		}}, nil
+	}
+	oldName := utils.NamePart(request.Path)
+	newName := utils.NamePart(request.NewPath)
+	node := oldParent.GetChild(oldName)
+
+	node.Name = newName
+
+	newParentPath := utils.DirPart(request.NewPath)
+	newParent := ctlr.Server.CreateNodeIfNotExists(newParentPath, false)
+	newParent.AddChild(node)
+	oldParent.RemoveChild(oldName)
+
+	for _, storage := range node.Storages {
+		ss := ctlr.Server.GetStorageServer(ctlr.Server.StorageAddresses[storage.Alias])
+		_, _ = ss.Move(ctx, &pb.MoveArgs{
+			Path:    request.Path,
+			NewPath: request.NewPath,
+		})
+	}
+
+	return &pb.MoveResponse{ErrorStatus: &pb.ErrorStatus{
+		Code:        0,
+		Description: "",
+	}}, nil
 }
 
 func (ctlr *NamingServerController) DeleteFile(ctx context.Context, request *pb.DeleteRequest) (*pb.DeleteResponse, error) {
@@ -110,10 +176,28 @@ func (ctlr *NamingServerController) DeleteFile(ctx context.Context, request *pb.
 	// delete child with file name
 	// find storages with the file
 	// contact them to delete the file
-}
 
-func (ctlr *NamingServerController) Copy(ctx context.Context, request *pb.CopyRequest) (*pb.CopyResponse, error) {
-	panic("no copy operation")
+	parentPath := utils.DirPart(request.Path)
+	parent, ok := ctlr.Server.FindNode(parentPath)
+	if !ok {
+		return &pb.DeleteResponse{
+			ErrorStatus: &pb.ErrorStatus{
+				Code:        uint32(syscall.ENOENT),
+				Description: "No parent directory found",
+			},
+		}, nil
+	}
+	parent.RemoveChild(utils.NamePart(request.Path))
+
+	for _, address := range ctlr.Server.StorageAddresses {
+		server := ctlr.Server.GetStorageServer(address)
+		server.Remove(ctx, &pb.RemoveArgs{Path: request.Path})
+	}
+
+	return &pb.DeleteResponse{ErrorStatus: &pb.ErrorStatus{
+		Code:        0,
+		Description: "",
+	}}, nil
 }
 
 func (ctlr *NamingServerController) DeleteDirectory(ctx context.Context, request *pb.DeleteRequest) (*pb.DeleteResponse, error) {
@@ -122,6 +206,28 @@ func (ctlr *NamingServerController) DeleteDirectory(ctx context.Context, request
 	// delete child with directory name
 	// find storages with the directory
 	// contact them to delete the directory
+
+	parentPath := utils.DirPart(request.Path)
+	parent, ok := ctlr.Server.FindNode(parentPath)
+	if !ok {
+		return &pb.DeleteResponse{
+			ErrorStatus: &pb.ErrorStatus{
+				Code:        uint32(syscall.ENOENT),
+				Description: "No parent directory found",
+			},
+		}, nil
+	}
+	parent.RemoveChild(utils.NamePart(request.Path))
+
+	for _, address := range ctlr.Server.StorageAddresses {
+		server := ctlr.Server.GetStorageServer(address)
+		server.Remove(ctx, &pb.RemoveArgs{Path: request.Path})
+	}
+
+	return &pb.DeleteResponse{ErrorStatus: &pb.ErrorStatus{
+		Code:        0,
+		Description: "",
+	}}, nil
 }
 
 func (ctlr *NamingServerController) MakeDirectory(ctx context.Context, request *pb.MakeDirectoryRequest) (*pb.MakeDirectoryResponse, error) {
@@ -130,10 +236,53 @@ func (ctlr *NamingServerController) MakeDirectory(ctx context.Context, request *
 	// add child with file name
 	// find 2 random storages
 	// contact them to make the directory
+
+	ctlr.Server.CreateNodeIfNotExists(request.Path, false)
+	return &pb.MakeDirectoryResponse{ErrorStatus: &pb.ErrorStatus{
+		Code:        0,
+		Description: "",
+	}}, nil
 }
 
 func (ctlr *NamingServerController) ListDirectory(ctx context.Context, request *pb.ListDirectoryRequest) (*pb.ListDirectoryResponse, error) {
 	// client sends path
 	// traverse index tree and find node
 	// return all children of the node
+
+	node, ok := ctlr.Server.FindNode(request.Path)
+	if !ok {
+		return &pb.ListDirectoryResponse{
+			ErrorStatus: &pb.ErrorStatus{
+				Code:        uint32(syscall.ENOENT),
+				Description: "No such directory",
+			},
+			Contents: nil,
+		}, nil
+	}
+
+	var res []*pb.Node
+
+	for _, child := range node.Children {
+		mode := pb.NodeMode_REGULAR_FILE
+		if child.Type == DIR {
+			mode = pb.NodeMode_DIRECTORY
+		}
+
+		res = append(res, &pb.Node{
+			Mode: mode,
+			Name: child.Name,
+		})
+	}
+
+	return &pb.ListDirectoryResponse{
+		ErrorStatus: &pb.ErrorStatus{
+			Code:        0,
+			Description: "",
+		},
+		Contents: res,
+	}, nil
+}
+
+func (ctlr *NamingServerController) Copy(ctx context.Context, request *pb.CopyRequest) (*pb.CopyResponse, error) {
+	panic("no copy operation")
 }

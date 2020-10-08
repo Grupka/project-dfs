@@ -4,8 +4,8 @@ import (
 	"context"
 	"io"
 	"os"
+	utils "project-dfs"
 	"project-dfs/pb"
-	"strings"
 	"syscall"
 )
 
@@ -54,18 +54,10 @@ func (ctlr *StorageServiceController) Initialize(ctx context.Context, args *pb.I
 	}, nil
 }
 
-func DoesDirectoryExist(path string) (bool, string) {
-	lastIndexSlash := strings.LastIndex(path, "/")
-	directoryPath := path[:lastIndexSlash]
-	_, err := os.Stat(directoryPath)
-
-	return !os.IsNotExist(err), directoryPath
-}
-
 func (ctlr *StorageServiceController) CreateFile(ctx context.Context, args *pb.CreateFileArgs) (*pb.CreateFileResult, error) {
 	// create a new empty file
 	path := StoragePath + args.Path
-	exists, directoryPath := DoesDirectoryExist(path)
+	exists, directoryPath := utils.DoesDirectoryExist(path)
 
 	if !exists {
 		errDir := os.MkdirAll(directoryPath, 0777)
@@ -199,8 +191,8 @@ func (ctlr *StorageServiceController) Copy(ctx context.Context, args *pb.CopyArg
 
 	path := StoragePath + args.Path
 	newPath := StoragePath + args.NewPath
-	exists, directoryPath := DoesDirectoryExist(path)
-	existsNew, directoryNewPath := DoesDirectoryExist(newPath)
+	exists, directoryPath := utils.DoesDirectoryExist(path)
+	existsNew, directoryNewPath := utils.DoesDirectoryExist(newPath)
 
 	if !exists {
 		errDir := os.MkdirAll(directoryPath, 0777)
@@ -259,8 +251,8 @@ func (ctlr *StorageServiceController) Move(ctx context.Context, args *pb.MoveArg
 
 	path := StoragePath + args.Path
 	newPath := StoragePath + args.NewPath
-	exists, directoryPath := DoesDirectoryExist(path)
-	existsNew, directoryNewPath := DoesDirectoryExist(newPath)
+	exists, directoryPath := utils.DoesDirectoryExist(path)
+	existsNew, directoryNewPath := utils.DoesDirectoryExist(newPath)
 
 	if !exists {
 		errDir := os.MkdirAll(directoryPath, 0777)
