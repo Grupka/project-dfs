@@ -17,19 +17,24 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type NamingClient interface {
-	// Registers storage server in the naming server
+	// Registers storage server in the naming server.
 	Register(ctx context.Context, in *RegRequest, opts ...grpc.CallOption) (*RegResponse, error)
-	// Fetches the file index to obtain list of storage servers that hold the requested path
+	// Creates a new file on 2 randomly selected storage servers.
+	CreateFile(ctx context.Context, in *CreateFileRequest, opts ...grpc.CallOption) (*NCreateFileResult, error)
+	// Copies a file OR a directory (recursively) to 2 randomly selected storage servers.
+	// storage server is decided for each file separately.
+	Copy(ctx context.Context, in *CopyRequest, opts ...grpc.CallOption) (*NCopyResult, error)
+	// Fetches the file index to obtain list of storage servers that hold the requested path.
 	Discover(ctx context.Context, in *DiscoverRequest, opts ...grpc.CallOption) (*DiscoverResponse, error)
-	// Removes the file with specified name from the index and notifies storage servers about file removal
+	// Removes the file with specified name from the index and notifies storage servers about file removal.
 	DeleteFile(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResult, error)
-	// Removes the directory with specified name from the index and notifies storage servers about directory removal
+	// Removes the directory with specified name from the index and notifies storage servers about directory removal.
 	DeleteDirectory(ctx context.Context, in *DeleteRequest, opts ...grpc.CallOption) (*DeleteResult, error)
-	// Moves the file with the specified name in the index and notifies storage servers about file move
+	// Moves the file with the specified name in the index and notifies storage servers about file move.
 	MoveFile(ctx context.Context, in *MoveRequest, opts ...grpc.CallOption) (*NMoveResult, error)
-	// Creates a directory in the index and notifies storage servers about newly created directory
+	// Creates a directory in the index and notifies storage servers about newly created directory.
 	MakeDirectory(ctx context.Context, in *MakeDirectoryRequest, opts ...grpc.CallOption) (*MakeDirectoryResult, error)
-	// Retrieves list of the directory contents from the index
+	// Retrieves list of the directory contents from the index.
 	ListDirectory(ctx context.Context, in *ListDirectoryRequest, opts ...grpc.CallOption) (*ListDirectoryResult, error)
 }
 
@@ -44,6 +49,24 @@ func NewNamingClient(cc grpc.ClientConnInterface) NamingClient {
 func (c *namingClient) Register(ctx context.Context, in *RegRequest, opts ...grpc.CallOption) (*RegResponse, error) {
 	out := new(RegResponse)
 	err := c.cc.Invoke(ctx, "/pb.Naming/Register", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *namingClient) CreateFile(ctx context.Context, in *CreateFileRequest, opts ...grpc.CallOption) (*NCreateFileResult, error) {
+	out := new(NCreateFileResult)
+	err := c.cc.Invoke(ctx, "/pb.Naming/CreateFile", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *namingClient) Copy(ctx context.Context, in *CopyRequest, opts ...grpc.CallOption) (*NCopyResult, error) {
+	out := new(NCopyResult)
+	err := c.cc.Invoke(ctx, "/pb.Naming/Copy", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -108,19 +131,24 @@ func (c *namingClient) ListDirectory(ctx context.Context, in *ListDirectoryReque
 // All implementations must embed UnimplementedNamingServer
 // for forward compatibility
 type NamingServer interface {
-	// Registers storage server in the naming server
+	// Registers storage server in the naming server.
 	Register(context.Context, *RegRequest) (*RegResponse, error)
-	// Fetches the file index to obtain list of storage servers that hold the requested path
+	// Creates a new file on 2 randomly selected storage servers.
+	CreateFile(context.Context, *CreateFileRequest) (*NCreateFileResult, error)
+	// Copies a file OR a directory (recursively) to 2 randomly selected storage servers.
+	// storage server is decided for each file separately.
+	Copy(context.Context, *CopyRequest) (*NCopyResult, error)
+	// Fetches the file index to obtain list of storage servers that hold the requested path.
 	Discover(context.Context, *DiscoverRequest) (*DiscoverResponse, error)
-	// Removes the file with specified name from the index and notifies storage servers about file removal
+	// Removes the file with specified name from the index and notifies storage servers about file removal.
 	DeleteFile(context.Context, *DeleteRequest) (*DeleteResult, error)
-	// Removes the directory with specified name from the index and notifies storage servers about directory removal
+	// Removes the directory with specified name from the index and notifies storage servers about directory removal.
 	DeleteDirectory(context.Context, *DeleteRequest) (*DeleteResult, error)
-	// Moves the file with the specified name in the index and notifies storage servers about file move
+	// Moves the file with the specified name in the index and notifies storage servers about file move.
 	MoveFile(context.Context, *MoveRequest) (*NMoveResult, error)
-	// Creates a directory in the index and notifies storage servers about newly created directory
+	// Creates a directory in the index and notifies storage servers about newly created directory.
 	MakeDirectory(context.Context, *MakeDirectoryRequest) (*MakeDirectoryResult, error)
-	// Retrieves list of the directory contents from the index
+	// Retrieves list of the directory contents from the index.
 	ListDirectory(context.Context, *ListDirectoryRequest) (*ListDirectoryResult, error)
 	mustEmbedUnimplementedNamingServer()
 }
@@ -131,6 +159,12 @@ type UnimplementedNamingServer struct {
 
 func (UnimplementedNamingServer) Register(context.Context, *RegRequest) (*RegResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedNamingServer) CreateFile(context.Context, *CreateFileRequest) (*NCreateFileResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateFile not implemented")
+}
+func (UnimplementedNamingServer) Copy(context.Context, *CopyRequest) (*NCopyResult, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Copy not implemented")
 }
 func (UnimplementedNamingServer) Discover(context.Context, *DiscoverRequest) (*DiscoverResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Discover not implemented")
@@ -177,6 +211,42 @@ func _Naming_Register_Handler(srv interface{}, ctx context.Context, dec func(int
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NamingServer).Register(ctx, req.(*RegRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Naming_CreateFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NamingServer).CreateFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Naming/CreateFile",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NamingServer).CreateFile(ctx, req.(*CreateFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Naming_Copy_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CopyRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NamingServer).Copy(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.Naming/Copy",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NamingServer).Copy(ctx, req.(*CopyRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -296,6 +366,14 @@ var _Naming_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Register",
 			Handler:    _Naming_Register_Handler,
+		},
+		{
+			MethodName: "CreateFile",
+			Handler:    _Naming_CreateFile_Handler,
+		},
+		{
+			MethodName: "Copy",
+			Handler:    _Naming_Copy_Handler,
 		},
 		{
 			MethodName: "Discover",

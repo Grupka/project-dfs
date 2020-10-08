@@ -10,11 +10,11 @@ service Naming {
   rpc Register(RegRequest) returns (RegResponse) {}
 
   // Creates a new file on 2 randomly selected storage servers.
-  rpc CreateFile(CreateFileRequest) returns (CreateFileResult) {}
+  rpc CreateFile(CreateFileRequest) returns (NCreateFileResult) {}
 
   // Copies a file OR a directory (recursively) to 2 randomly selected storage servers.
   // storage server is decided for each file separately.
-  rpc Copy(CopyRequest) returns (CopyResult) {}
+  rpc Copy(CopyRequest) returns (NCopyResult) {}
 
   // Fetches the file index to obtain list of storage servers that hold the requested path.
   rpc Discover(DiscoverRequest) returns (DiscoverResponse) {}
@@ -54,7 +54,7 @@ message CreateFileRequest {
 
 }
 
-message CreateFileResult {
+message NCreateFileResult {
 
 }
 
@@ -64,7 +64,7 @@ message CopyRequest {
 
 }
 
-message CopyResult {
+message NCopyResult {
 
 }
 

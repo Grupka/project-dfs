@@ -54,10 +54,12 @@ func (node *DfsNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.Att
 func (node *DfsNode) Unlink(ctx context.Context, name string) syscall.Errno {
 	path := node.Path() + "/" + name
 
-	// Find the appropriate storage server
-	opClient := node.Client.GetStorageServerForPath(path)
+	client := node.Client.NamingServerClient
 
-	info := pb.RemoveArgs{
+	// Find the appropriate storage server
+	//opClient := node.Client.GetStorageServerForPath(path)
+
+	info := pb.DeleteRequest{
 		Path: path,
 	}
 
