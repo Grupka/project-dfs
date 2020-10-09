@@ -24,13 +24,6 @@ func NewStorageServiceController(server *StorageServer) *StorageServiceControlle
 	}
 }
 
-func (ctlr *StorageServiceController) AddStorage(ctx context.Context, request *pb.AddRequest) (*pb.AddResponse, error) {
-	// update address map on the STORAGE server
-	ctlr.Server.SetMap(request.GetServerAlias(), request.GetServerAddress())
-
-	return &pb.AddResponse{}, nil
-}
-
 // ---
 
 func getFreeSpace() int64 {

@@ -6,7 +6,7 @@ import "common.proto";
 
 
 service Storage {
-  rpc AddStorage(AddRequest) returns (AddResponse) {}
+  //rpc AddStorage(AddRequest) returns (AddResponse) {}
 
   rpc Initialize(InitializeArgs) returns (InitializeResult) {};
   rpc CreateFile(CreateFileArgs) returns (CreateFileResult) {};
@@ -16,14 +16,6 @@ service Storage {
   rpc GetFileInfo(GetFileInfoArgs) returns (GetFileInfoResult) {};
   rpc Copy(CopyArgs) returns (CopyResult) {};
   rpc Move(MoveArgs) returns (MoveResult) {};
-}
-
-message AddRequest {
-  string serverAlias = 1;
-  string serverAddress = 2;
-}
-
-message AddResponse {
 }
 
 // ---

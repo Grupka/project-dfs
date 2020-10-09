@@ -73,6 +73,7 @@ message CopyResponse {
 
 message RegRequest {
   string serverAlias = 1;
+  uint32 port = 2;
 }
 
 enum Status {

@@ -17,7 +17,6 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StorageClient interface {
-	AddStorage(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*AddResponse, error)
 	Initialize(ctx context.Context, in *InitializeArgs, opts ...grpc.CallOption) (*InitializeResult, error)
 	CreateFile(ctx context.Context, in *CreateFileArgs, opts ...grpc.CallOption) (*CreateFileResult, error)
 	ReadFile(ctx context.Context, in *ReadFileArgs, opts ...grpc.CallOption) (*ReadFileResult, error)
@@ -34,15 +33,6 @@ type storageClient struct {
 
 func NewStorageClient(cc grpc.ClientConnInterface) StorageClient {
 	return &storageClient{cc}
-}
-
-func (c *storageClient) AddStorage(ctx context.Context, in *AddRequest, opts ...grpc.CallOption) (*AddResponse, error) {
-	out := new(AddResponse)
-	err := c.cc.Invoke(ctx, "/pb.Storage/AddStorage", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *storageClient) Initialize(ctx context.Context, in *InitializeArgs, opts ...grpc.CallOption) (*InitializeResult, error) {
@@ -121,7 +111,6 @@ func (c *storageClient) Move(ctx context.Context, in *MoveArgs, opts ...grpc.Cal
 // All implementations must embed UnimplementedStorageServer
 // for forward compatibility
 type StorageServer interface {
-	AddStorage(context.Context, *AddRequest) (*AddResponse, error)
 	Initialize(context.Context, *InitializeArgs) (*InitializeResult, error)
 	CreateFile(context.Context, *CreateFileArgs) (*CreateFileResult, error)
 	ReadFile(context.Context, *ReadFileArgs) (*ReadFileResult, error)
@@ -137,9 +126,6 @@ type StorageServer interface {
 type UnimplementedStorageServer struct {
 }
 
-func (UnimplementedStorageServer) AddStorage(context.Context, *AddRequest) (*AddResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddStorage not implemented")
-}
 func (UnimplementedStorageServer) Initialize(context.Context, *InitializeArgs) (*InitializeResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Initialize not implemented")
 }
@@ -175,24 +161,6 @@ type UnsafeStorageServer interface {
 
 func RegisterStorageServer(s *grpc.Server, srv StorageServer) {
 	s.RegisterService(&_Storage_serviceDesc, srv)
-}
-
-func _Storage_AddStorage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(StorageServer).AddStorage(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pb.Storage/AddStorage",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StorageServer).AddStorage(ctx, req.(*AddRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Storage_Initialize_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -343,10 +311,6 @@ var _Storage_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "pb.Storage",
 	HandlerType: (*StorageServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "AddStorage",
-			Handler:    _Storage_AddStorage_Handler,
-		},
 		{
 			MethodName: "Initialize",
 			Handler:    _Storage_Initialize_Handler,

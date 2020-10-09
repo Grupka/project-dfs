@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 	utils "project-dfs"
 	"project-dfs/pb"
+	"strconv"
 	"syscall"
 )
 
@@ -32,28 +32,8 @@ func (ctlr *NamingServerController) Register(ctx context.Context, request *pb.Re
 	}
 
 	// add a new Server to the list of known Storage Servers
-	peerAddress := otherPeer.Addr
-	ctlr.Server.SetAddressMap(request.ServerAlias, peerAddress.String())
-
-	// broadcast the address to all other Storage Servers
-	for key, element := range ctlr.Server.StorageAddresses {
-		if key == request.ServerAlias {
-			continue
-		}
-		conn, err := grpc.Dial(element, grpc.WithInsecure())
-		if err != nil {
-			println("Error dialing storage server", key, "during register of", request.ServerAlias, ":", err.Error())
-			continue
-		}
-		client := pb.NewStorageClient(conn)
-		_, err = client.AddStorage(context.Background(), &pb.AddRequest{
-			ServerAlias:   request.ServerAlias,
-			ServerAddress: peerAddress.String(),
-		})
-		if err != nil {
-			println("Error during adding storage:", err.Error())
-		}
-	}
+	peerAddress := otherPeer.Addr.String() + ":" + strconv.Itoa(int(request.Port))
+	ctlr.Server.SetAddressMap(request.ServerAlias, peerAddress)
 
 	return &pb.RegResponse{Status: pb.Status_ACCEPT}, nil
 }

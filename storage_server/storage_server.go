@@ -8,6 +8,8 @@ import (
 	"net"
 	"os"
 	"project-dfs/pb"
+	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -72,9 +74,11 @@ func Run() {
 	conn, err := grpc.Dial(metadata.NamingServerAddress, grpc.WithInsecure())
 	CheckError(err)
 
+	port, _ := strconv.Atoi(metadata.LocalAddress[strings.LastIndex(metadata.LocalAddress, ":")+1:])
+
 	newServer := pb.NewNamingClient(conn)
 	response, err := newServer.Register(context.Background(),
-		&pb.RegRequest{ServerAlias: metadata.Alias})
+		&pb.RegRequest{ServerAlias: metadata.Alias, Port: uint32(port)})
 	CheckError(err)
 	log.Printf("Response from naming server: %s", response.GetStatus())
 
