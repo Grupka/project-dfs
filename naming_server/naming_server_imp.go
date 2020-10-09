@@ -41,13 +41,18 @@ func (ctlr *NamingServerController) Register(ctx context.Context, request *pb.Re
 			continue
 		}
 		conn, err := grpc.Dial(element, grpc.WithInsecure())
-		CheckError(err)
+		if err != nil {
+			println("Error dialing storage server", key, "during register of", request.ServerAlias, ":", err.Error())
+			continue
+		}
 		client := pb.NewStorageClient(conn)
 		_, err = client.AddStorage(context.Background(), &pb.AddRequest{
 			ServerAlias:   request.ServerAlias,
 			ServerAddress: peerAddress.String(),
 		})
-		CheckError(err)
+		if err != nil {
+			println("Error during adding storage:", err.Error())
+		}
 	}
 
 	return &pb.RegResponse{Status: pb.Status_ACCEPT}, nil

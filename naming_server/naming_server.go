@@ -203,13 +203,6 @@ func initNamingServer() *NamingServer {
 	}
 }
 
-func CheckError(err error) {
-	if err != nil {
-		println("Error serving gRPC naming server:", err.Error())
-		os.Exit(1)
-	}
-}
-
 func Run() {
 	server := initNamingServer()
 
@@ -217,12 +210,18 @@ func Run() {
 	fmt.Printf("%+v\n", server)
 
 	listener, err := net.Listen("tcp", server.LocalAddress)
-	CheckError(err)
+	if err != nil {
+		println("Error listening:", err.Error())
+		os.Exit(0)
+	}
 	println("Listening on " + server.LocalAddress)
 
 	namingController := NewNamingServiceController(server)
 	grpcServer := grpc.NewServer()
 	pb.RegisterNamingServer(grpcServer, namingController)
 	err = grpcServer.Serve(listener)
-	CheckError(err)
+	if err != nil {
+		println("Error serving:", err.Error())
+		os.Exit(0)
+	}
 }

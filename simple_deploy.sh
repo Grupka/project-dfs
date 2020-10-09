@@ -1,7 +1,10 @@
 #!/bin/bash
 
+echo "Building Storage server"
 go build -o StorageServer storage_server/main/main.go
+echo "Building Naming server"
 go build -o NamingServer naming_server/main/main.go
+echo "Built"
 
 mkdir -p run/naming_server
 mkdir -p run/storage_server_1
