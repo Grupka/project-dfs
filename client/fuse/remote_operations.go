@@ -165,9 +165,10 @@ func (node *DfsNode) Write(ctx context.Context, f fs.FileHandle, data []byte, of
 	}
 
 	info := pb.WriteFileArgs{
-		Path:   path,
-		Offset: off,
-		Buffer: data,
+		Path:        path,
+		Offset:      off,
+		Buffer:      data,
+		IsChainCall: false,
 	}
 
 	result, err := opClient.WriteFile(ctx, &info)

@@ -19,12 +19,40 @@ type StorageServer struct {
 	NamingServerAddress   string
 	storageAddressesMutex sync.Mutex
 	storageAddresses      map[string]string // key:value = serverAlias:serverAddress
+	namingClient          pb.NamingClient
+	storageClients        map[string]pb.StorageClient
 }
 
 func (server *StorageServer) SetMap(newKey string, newValue string) {
 	server.storageAddressesMutex.Lock()
 	defer server.storageAddressesMutex.Unlock()
 	server.storageAddresses[newKey] = newValue
+}
+
+func (server *StorageServer) GetNamingClient() pb.NamingClient {
+	if server.namingClient == nil {
+		conn, err := grpc.Dial(server.NamingServerAddress, grpc.WithInsecure())
+		if err != nil {
+			println("Error while getting naming client:", err)
+			return nil
+		}
+		server.namingClient = pb.NewNamingClient(conn)
+	}
+	return server.namingClient
+}
+
+func (server *StorageServer) GetStorageClient(address string) pb.StorageClient {
+	client, ok := server.storageClients[address]
+	if !ok {
+		conn, err := grpc.Dial(address, grpc.WithInsecure())
+		if err != nil {
+			println("Error while getting storage client:", err)
+			return nil
+		}
+		client = pb.NewStorageClient(conn)
+		server.storageClients[address] = client
+	}
+	return client
 }
 
 func initStorageServer() *StorageServer {
@@ -55,6 +83,7 @@ func initStorageServer() *StorageServer {
 		NamingServerAddress:   namingServerAddress,
 		storageAddressesMutex: sync.Mutex{},
 		storageAddresses:      make(map[string]string),
+		storageClients:        map[string]pb.StorageClient{},
 	}
 }
 

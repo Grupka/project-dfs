@@ -136,6 +136,33 @@ func (ctlr *StorageServiceController) WriteFile(ctx context.Context, args *pb.Wr
 	}
 
 	fd.Close()
+
+	if !args.IsChainCall {
+		response, err := ctlr.Server.GetNamingClient().Discover(ctx, &pb.DiscoverRequest{
+			Path: args.Path,
+		})
+		if err != nil {
+			println("Error while replicating write call:", err.Error())
+		} else {
+			for _, s := range response.StorageInfo {
+				if s.Alias == ctlr.Server.Alias {
+					continue
+				}
+				client := ctlr.Server.GetStorageClient(s.Address)
+				if client == nil {
+					println("aborting write replication")
+					break
+				}
+				client.WriteFile(ctx, &pb.WriteFileArgs{
+					Path:        args.Path,
+					Offset:      args.Offset,
+					Buffer:      args.Buffer,
+					IsChainCall: true,
+				})
+			}
+		}
+	}
+
 	return &pb.WriteFileResult{ErrorStatus: &pb.ErrorStatus{
 		Code:        0,
 		Description: "OK",

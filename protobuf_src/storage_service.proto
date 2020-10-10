@@ -58,6 +58,7 @@ message WriteFileArgs {
   string path = 1;
   int64 offset = 2;
   bytes buffer = 3;
+  bool isChainCall = 4;
 }
 
 message WriteFileResult {
