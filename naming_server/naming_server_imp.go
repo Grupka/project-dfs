@@ -8,6 +8,7 @@ import (
 	utils "project-dfs"
 	"project-dfs/pb"
 	"strconv"
+	"strings"
 	"syscall"
 )
 
@@ -25,6 +26,8 @@ func NewNamingServiceController(server *NamingServer) *NamingServerController {
 
 // update address map on the NAMING Server
 func (ctlr *NamingServerController) Register(ctx context.Context, request *pb.RegRequest) (*pb.RegResponse, error) {
+	fmt.Println("Register:", request)
+
 	otherPeer, ok := peer.FromContext(ctx)
 	if !ok {
 		println("other peer not found")
@@ -32,7 +35,12 @@ func (ctlr *NamingServerController) Register(ctx context.Context, request *pb.Re
 	}
 
 	// add a new Server to the list of known Storage Servers
-	peerAddress := otherPeer.Addr.String() + ":" + strconv.Itoa(int(request.Port))
+	peerAddress := otherPeer.Addr.String()
+	// Remove local port
+	peerAddress = peerAddress[:strings.LastIndex(peerAddress, ":")]
+	// Add remote port
+	peerAddress += ":" + strconv.Itoa(int(request.Port))
+
 	ctlr.Server.SetAddressMap(request.ServerAlias, peerAddress)
 
 	return &pb.RegResponse{Status: pb.Status_ACCEPT}, nil
@@ -41,42 +49,47 @@ func (ctlr *NamingServerController) Register(ctx context.Context, request *pb.Re
 // key is the file's path
 // element is StorageInfo struct
 func (ctlr *NamingServerController) Discover(ctx context.Context, request *pb.DiscoverRequest) (response *pb.DiscoverResponse, err error) {
+	fmt.Println("Discover:", request)
+	storages := make([]*pb.DiscoveredStorage, 0)
+
 	// if path == "" return ALL storage servers
 	if request.Path == "" {
-		storages := make([]*pb.DiscoveredStorage, 0)
 		for alias, address := range ctlr.Server.StorageAddresses {
 			storages = append(storages, &pb.DiscoveredStorage{
 				Alias:   alias,
 				Address: address,
 			})
 		}
+		fmt.Println("Returning storages:", storages)
 		return &pb.DiscoverResponse{StorageInfo: storages}, nil
 	}
 
 	node, ok := ctlr.Server.FindNode(request.Path)
+	fmt.Println("Storages after FindNode:", node.Storages)
 	if !ok {
+		fmt.Println("Node not found! Returning empty list")
 		return &pb.DiscoverResponse{
 			StorageInfo: []*pb.DiscoveredStorage{},
 		}, nil
 	}
 
-	storages := make([]*pb.DiscoveredStorage, 0)
 	for _, storage := range node.Storages {
+		fmt.Println("Appending storage", storage.Alias)
 		storages = append(storages, &pb.DiscoveredStorage{
 			Alias:   storage.Alias,
 			Address: ctlr.Server.StorageAddresses[storage.Alias],
 		})
 	}
 
-	response = &pb.DiscoverResponse{
-		StorageInfo: storages,
-	}
-	return &pb.DiscoverResponse{StorageInfo: make([]*pb.DiscoveredStorage, 0)}, nil
+	fmt.Println("Returning storages:", storages)
+	return &pb.DiscoverResponse{StorageInfo: storages}, nil
 }
 
 // ---
 
 func (ctlr *NamingServerController) CreateFile(ctx context.Context, request *pb.CreateFileRequest) (*pb.CreateFileResponse, error) {
+	fmt.Println("CreateFile:", request)
+
 	// client sends path
 	// traverse index tree and find node parent for the path
 	// add child with file name
@@ -88,11 +101,10 @@ func (ctlr *NamingServerController) CreateFile(ctx context.Context, request *pb.
 	//	_ = os.MkdirAll(dir, 0777)
 	//}
 
-	fmt.Println("CreateFile:", request.Path)
-
 	node := ctlr.Server.CreateNodeIfNotExists(request.Path, true)
 	servers := ctlr.Server.Get2RandomStorageServers()
 	for _, s := range servers {
+		fmt.Println("Sending create file request to storage server", s.Alias)
 		server := ctlr.Server.GetStorageServer(s.Address)
 		response, err := server.CreateFile(ctx, &pb.CreateFileArgs{Path: request.Path})
 		if err != nil {
@@ -108,6 +120,7 @@ func (ctlr *NamingServerController) CreateFile(ctx context.Context, request *pb.
 				}}, nil
 		}
 		node.Storages = append(node.Storages, &StorageInfo{Alias: s.Alias})
+		fmt.Println("Storage", s.Alias, "added to node", node.Name)
 	}
 
 	return &pb.CreateFileResponse{ErrorStatus: &pb.ErrorStatus{
@@ -117,6 +130,8 @@ func (ctlr *NamingServerController) CreateFile(ctx context.Context, request *pb.
 }
 
 func (ctlr *NamingServerController) Move(ctx context.Context, request *pb.MoveRequest) (*pb.MoveResponse, error) {
+	fmt.Println("Move:", request)
+
 	// client sends paths: old and new
 	// traverse index tree and find node
 
@@ -156,6 +171,8 @@ func (ctlr *NamingServerController) Move(ctx context.Context, request *pb.MoveRe
 }
 
 func (ctlr *NamingServerController) DeleteFile(ctx context.Context, request *pb.DeleteRequest) (*pb.DeleteResponse, error) {
+	fmt.Println("DeleteFile:", request)
+
 	// client sends path
 	// traverse index tree and find node parent for the path
 	// delete child with file name
@@ -186,6 +203,8 @@ func (ctlr *NamingServerController) DeleteFile(ctx context.Context, request *pb.
 }
 
 func (ctlr *NamingServerController) DeleteDirectory(ctx context.Context, request *pb.DeleteRequest) (*pb.DeleteResponse, error) {
+	fmt.Println("DeleteDirectory:", request)
+
 	// client sends path
 	// traverse index tree and find node parent for the path
 	// delete child with directory name
@@ -216,6 +235,8 @@ func (ctlr *NamingServerController) DeleteDirectory(ctx context.Context, request
 }
 
 func (ctlr *NamingServerController) MakeDirectory(ctx context.Context, request *pb.MakeDirectoryRequest) (*pb.MakeDirectoryResponse, error) {
+	fmt.Println("MakeDirectory:", request)
+
 	// client sends path
 	// traverse index tree and find node parent for the path
 	// add child with file name
@@ -230,6 +251,8 @@ func (ctlr *NamingServerController) MakeDirectory(ctx context.Context, request *
 }
 
 func (ctlr *NamingServerController) ListDirectory(ctx context.Context, request *pb.ListDirectoryRequest) (*pb.ListDirectoryResponse, error) {
+	fmt.Println("ListDirectory:", request)
+
 	// client sends path
 	// traverse index tree and find node
 	// return all children of the node

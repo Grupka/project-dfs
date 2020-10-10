@@ -6,7 +6,6 @@ import (
 	"os"
 	"project-dfs/client"
 	"project-dfs/client/fuse"
-	"project-dfs/pb"
 	"testing"
 )
 
@@ -23,9 +22,7 @@ func TestMount(t *testing.T) {
 		return
 	}
 
-	c := &client.Client{
-		NamingServerClient: pb.NewNamingClient(conn),
-	}
+	c := client.NewClient(conn)
 
 	root := fuse.NewDfsNode(c, "")
 	server := fuse.Mount("mnt_point", root)

@@ -6,6 +6,7 @@ import (
 	"github.com/hanwen/go-fuse/fuse"
 	"log"
 	"project-dfs/client"
+	"strings"
 	"unsafe"
 )
 
@@ -22,17 +23,56 @@ func NewDfsNode(client *client.Client, name string) *DfsNode {
 	}
 }
 
-func (node *DfsNode) Path() string {
+func (node *DfsNode) PathForFile(name string) string {
+	var nodes []string
 	n := node
-	path := ""
 
 	for n != nil {
-		path = "/" + n.Name + path
+		nodes = append([]string{n.Name}, nodes...)
 		_, n_ := n.Parent()
 		n = (*DfsNode)(unsafe.Pointer(n_))
 	}
 
-	return path
+	nodes = append(nodes, name)
+
+	if len(nodes) == 0 {
+		return "/"
+	} else {
+		return strings.Join(nodes, "/")
+	}
+}
+
+func (node *DfsNode) Path() string {
+	var nodes []string
+	n := node
+
+	for n != nil {
+		nodes = append([]string{n.Name}, nodes...)
+		_, n_ := n.Parent()
+		n = (*DfsNode)(unsafe.Pointer(n_))
+	}
+
+	if len(nodes) == 0 {
+		return "/"
+	} else {
+		return strings.Join(nodes, "/")
+	}
+
+	//n := node
+	//path := ""
+	//
+	//// Handle root node
+	//if n.Name == "" {
+	//	return ""
+	//}
+	//
+	//for n != nil {
+	//	path = "/" + n.Name + path
+	//	_, n_ := n.Parent()
+	//	n = (*DfsNode)(unsafe.Pointer(n_))
+	//}
+	//
+	//return path
 }
 
 func (node *DfsNode) String() string {

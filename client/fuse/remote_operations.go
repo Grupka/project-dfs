@@ -2,6 +2,7 @@ package fuse
 
 import (
 	"context"
+	"fmt"
 	"github.com/hanwen/go-fuse/fs"
 	"github.com/hanwen/go-fuse/fuse"
 	"project-dfs/pb"
@@ -23,15 +24,20 @@ var _ = (fs.FileWriter)((*DfsHandle)(nil))
 // In our case, the most important things here are report file size and permissions (mode).
 func (node *DfsNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
 	path := node.Path()
+	fmt.Println("Getattr: path:", path)
 
 	out.Mode = 0777
+	out.Size = 0
 
 	// Find the appropriate storage server
 	opClient := node.Client.GetStorageServerForPath(path)
 
 	if opClient == nil {
 		println("getattr: no storage server found for", path)
-		return syscall.ENOENT
+		println("returning zero file size")
+
+		return 0
+		//return syscall.ENOENT
 	}
 
 	// Do the request to storage server
@@ -52,7 +58,8 @@ func (node *DfsNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.Att
 
 // Used to delete regular files.
 func (node *DfsNode) Unlink(ctx context.Context, name string) syscall.Errno {
-	path := node.Path() + "/" + name
+	path := node.PathForFile(name)
+	fmt.Println("Unlink: path:", path)
 
 	client := node.Client.NamingServerClient
 
@@ -71,7 +78,8 @@ func (node *DfsNode) Unlink(ctx context.Context, name string) syscall.Errno {
 
 // Used to delete directories.
 func (node *DfsNode) Rmdir(ctx context.Context, name string) syscall.Errno {
-	path := node.Path() + "/" + name
+	path := node.PathForFile(name)
+	fmt.Println("Rmdir: path:", path)
 
 	client := node.Client.NamingServerClient
 
@@ -106,6 +114,7 @@ func (h *DfsHandle) Read(ctx context.Context, dest []byte, off int64) (fuse.Read
 // Reads from the node.
 func (node *DfsNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
 	path := node.Path()
+	fmt.Println("Read: path:", path)
 
 	// Find the appropriate storage server
 	opClient := node.Client.GetStorageServerForPath(path)
@@ -127,6 +136,7 @@ func (node *DfsNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off
 		return nil, syscall.EAGAIN
 	}
 
+	fmt.Println("Returning read", result.Buffer, "with code", result.ErrorStatus.Code)
 	return fuse.ReadResultData(result.Buffer), syscall.Errno(result.ErrorStatus.Code)
 }
 
@@ -138,6 +148,7 @@ func (h *DfsHandle) Write(ctx context.Context, data []byte, off int64) (written 
 // Writes to a node.
 func (node *DfsNode) Write(ctx context.Context, f fs.FileHandle, data []byte, off int64) (written uint32, errno syscall.Errno) {
 	path := node.Path()
+	fmt.Println("Write: path:", path)
 
 	// Find the appropriate storage server
 	opClient := node.Client.GetStorageServerForPath(path)
@@ -167,6 +178,7 @@ func (node *DfsNode) Write(ctx context.Context, f fs.FileHandle, data []byte, of
 // Lists all nodes in a directory.
 func (node *DfsNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 	path := node.Path()
+	fmt.Println("Readdir: path:", path)
 
 	// Find the appropriate storage server
 	opClient := node.Client.NamingServerClient
@@ -199,7 +211,11 @@ func (node *DfsNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) 
 
 // Checks if asked file is located in the asked node.
 func (node *DfsNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
+	fmt.Println("lookup:", node, ";", name)
+
 	path := node.Path()
+
+	out.Mode = 0777
 
 	// Find the appropriate storage server
 	opClient := node.Client.NamingServerClient
@@ -231,12 +247,13 @@ func (node *DfsNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut
 		return child.EmbeddedInode(), 0
 	}
 
-	return nil, syscall.Errno(result.ErrorStatus.Code)
+	return nil, syscall.ENOENT
 }
 
 // Creates a file.
 func (node *DfsNode) Create(ctx context.Context, name string, flags uint32, mode uint32, out *fuse.EntryOut) (n *fs.Inode, fh fs.FileHandle, fuseFlags uint32, errno syscall.Errno) {
-	path := node.Path() + "/" + name
+	path := node.PathForFile(name)
+	fmt.Println("Create: path:", path, "; name:", name, "; nodepath:", node.Path())
 
 	opClient := node.Client.NamingServerClient
 
@@ -259,9 +276,10 @@ func (node *DfsNode) Create(ctx context.Context, name string, flags uint32, mode
 
 // Renames a node (both files and directories).
 func (node *DfsNode) Rename(ctx context.Context, name string, newParent fs.InodeEmbedder, newName string, flags uint32) syscall.Errno {
-	path := node.Path() + "/" + name
+	path := node.PathForFile(name)
 	_newParent := (*DfsNode)(unsafe.Pointer(newParent.EmbeddedInode()))
-	newPath := _newParent.Path() + "/" + newName
+	newPath := _newParent.PathForFile(newName)
+	fmt.Println("Rename: oldPath:", path, "; newPath:", newPath)
 
 	// Find the appropriate storage server
 	opClient := node.Client.NamingServerClient
@@ -282,7 +300,8 @@ func (node *DfsNode) Rename(ctx context.Context, name string, newParent fs.Inode
 
 // Creates a directory.
 func (node *DfsNode) Mkdir(ctx context.Context, name string, mode uint32, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
-	path := node.Path()
+	path := node.PathForFile(name)
+	fmt.Println("Mkdir: path:", path)
 
 	opClient := node.Client.NamingServerClient
 

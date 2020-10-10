@@ -12,6 +12,13 @@ type Client struct {
 	storageServers     map[string]pb.StorageClient
 }
 
+func NewClient(conn grpc.ClientConnInterface) *Client {
+	return &Client{
+		NamingServerClient: pb.NewNamingClient(conn),
+		storageServers:     map[string]pb.StorageClient{},
+	}
+}
+
 func (client *Client) GetStorageServerForPath(path string) pb.StorageClient {
 	discoverResponse, err := client.NamingServerClient.Discover(context.Background(), &pb.DiscoverRequest{
 		Path: path,
@@ -37,7 +44,7 @@ func (client *Client) GetStorageServerByAddress(address string) pb.StorageClient
 	}
 
 	// Connect to the server and save it
-	conn, err := grpc.Dial(address)
+	conn, err := grpc.Dial(address, grpc.WithInsecure())
 	if err != nil {
 		println("Error occurred during connecting to storage server at \""+address+"\":", err.Error())
 		return nil

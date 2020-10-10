@@ -16,6 +16,10 @@ type StorageInfo struct {
 	Alias string
 }
 
+func (info *StorageInfo) String() string {
+	return "StorageInfo(" + info.Alias + ")"
+}
+
 type NodeType int32
 
 const (
@@ -71,7 +75,6 @@ func (server *NamingServer) FindNode(path string) (*Node, bool) {
 	node := server.RootIndexNode
 
 	segments := strings.Split(path, "/")[1:]
-	fmt.Println("Segments:", strings.Join(segments, ", "))
 
 	for _, s := range segments {
 		updated := false
@@ -88,6 +91,7 @@ func (server *NamingServer) FindNode(path string) (*Node, bool) {
 		}
 	}
 
+	fmt.Println("FindNode returned storages", node.Storages, "for", path, "; segments are:", segments)
 	return node, true
 }
 
@@ -104,6 +108,8 @@ func (server *NamingServer) CreateNodeIfNotExists(path string, lastNodeIsFile bo
 			}
 		}
 		if !exists {
+			fmt.Println("Creating new node", path)
+
 			t := DIR
 			if lastNodeIsFile && s == segments[len(segments)-1] {
 				t = FILE
@@ -120,6 +126,7 @@ func (server *NamingServer) CreateNodeIfNotExists(path string, lastNodeIsFile bo
 		}
 	}
 
+	fmt.Println("Returning node", node.Name, "with children", node.Children)
 	return node
 }
 
@@ -200,6 +207,7 @@ func initNamingServer() *NamingServer {
 		StorageAddresses:      make(map[string]string),
 		LocalAddress:          address,
 		RootIndexNode:         rootNode,
+		StorageServers:        make(map[string]pb.StorageClient),
 	}
 }
 
