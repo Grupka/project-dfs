@@ -34,6 +34,14 @@ type Node struct {
 	Storages []*StorageInfo
 }
 
+func (n *Node) GetChildrenNames() []string {
+	var childrenNames []string
+	for _, child := range n.Children {
+		childrenNames = append(childrenNames, child.Name)
+	}
+	return childrenNames
+}
+
 func (n *Node) GetChild(name string) *Node {
 	for _, child := range n.Children {
 		if child.Name == name {
@@ -45,6 +53,8 @@ func (n *Node) GetChild(name string) *Node {
 }
 
 func (n *Node) RemoveChild(name string) {
+	fmt.Println("RemoveChild before:", n.GetChildrenNames())
+
 	index := -1
 	for i, child := range n.Children {
 		if child.Name == name {
@@ -52,14 +62,17 @@ func (n *Node) RemoveChild(name string) {
 		}
 	}
 	if index == -1 {
-		println("Couldn't remove child"+name+"from node", n.Name, "as it doesn't exist")
+		println("Couldn't remove child", name, "from node", n.Name, "as it doesn't exist")
 		return
 	}
 	n.Children = append(n.Children[:index], n.Children[index+1:]...)
+	fmt.Println("RemoveChild after:", n.GetChildrenNames())
 }
 
 func (n *Node) AddChild(node *Node) {
+	fmt.Println("AddChild before:", n.GetChildrenNames())
 	n.Children = append(n.Children, node)
+	fmt.Println("AddChild after:", n.GetChildrenNames())
 }
 
 func NewNode(name string, t NodeType) *Node {

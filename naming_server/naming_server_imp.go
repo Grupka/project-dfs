@@ -149,12 +149,13 @@ func (ctlr *NamingServerController) Move(ctx context.Context, request *pb.MoveRe
 	newName := utils.NamePart(request.NewPath)
 	node := oldParent.GetChild(oldName)
 
+	oldParent.RemoveChild(oldName)
+
 	node.Name = newName
 
 	newParentPath := utils.DirPart(request.NewPath)
 	newParent := ctlr.Server.CreateNodeIfNotExists(newParentPath, false)
 	newParent.AddChild(node)
-	oldParent.RemoveChild(oldName)
 
 	for _, storage := range node.Storages {
 		ss := ctlr.Server.GetStorageServer(ctlr.Server.StorageAddresses[storage.Alias])
@@ -281,6 +282,8 @@ func (ctlr *NamingServerController) ListDirectory(ctx context.Context, request *
 			Name: child.Name,
 		})
 	}
+
+	fmt.Println("Returning", res)
 
 	return &pb.ListDirectoryResponse{
 		ErrorStatus: &pb.ErrorStatus{
