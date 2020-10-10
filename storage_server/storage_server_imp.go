@@ -80,7 +80,7 @@ func (ctlr *StorageServiceController) ReadFile(ctx context.Context, args *pb.Rea
 	// download a file from the DFS to the Client side
 
 	path := StoragePath + args.Path
-	fd, err := os.Open(path)
+	fd, err := os.OpenFile(path, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		return &pb.ReadFileResult{ErrorStatus: &pb.ErrorStatus{
 			Code:        1,
@@ -92,13 +92,15 @@ func (ctlr *StorageServiceController) ReadFile(ctx context.Context, args *pb.Rea
 
 	buf := make([]byte, args.Count)
 	n, err := fd.ReadAt(buf, args.Offset)
-	if err != nil {
-		return &pb.ReadFileResult{ErrorStatus: &pb.ErrorStatus{
-			Code:        1,
-			Description: err.Error(),
-		},
+	if n <= 0 {
+		return &pb.ReadFileResult{
+			ErrorStatus: &pb.ErrorStatus{
+				Code:        0,
+				Description: err.Error(),
+			},
 			Buffer: make([]byte, 0),
-			Count:  0}, nil
+			Count:  0,
+		}, nil
 	}
 
 	fd.Close()
@@ -116,7 +118,7 @@ func (ctlr *StorageServiceController) ReadFile(ctx context.Context, args *pb.Rea
 func (ctlr *StorageServiceController) WriteFile(ctx context.Context, args *pb.WriteFileArgs) (*pb.WriteFileResult, error) {
 
 	path := StoragePath + args.Path
-	fd, err := os.Open(path)
+	fd, err := os.OpenFile(path, os.O_WRONLY, os.ModePerm)
 	if err != nil {
 		return &pb.WriteFileResult{ErrorStatus: &pb.ErrorStatus{
 			Code:        1,

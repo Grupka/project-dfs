@@ -91,6 +91,7 @@ var _ = (fs.NodeReader)((*DfsNode)(nil))
 var _ = (fs.NodeWriter)((*DfsNode)(nil))
 var _ = (fs.NodeUnlinker)((*DfsNode)(nil))
 var _ = (fs.NodeRmdirer)((*DfsNode)(nil))
+var _ = (fs.NodeSetattrer)((*DfsNode)(nil))
 
 func Mount(path string, node *DfsNode) *fuse.Server {
 	fmt.Println("Mounting root to", path)

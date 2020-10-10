@@ -56,6 +56,10 @@ func (node *DfsNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.Att
 	return 0
 }
 
+func (node *DfsNode) Setattr(ctx context.Context, f fs.FileHandle, in *fuse.SetAttrIn, out *fuse.AttrOut) syscall.Errno {
+	return 0
+}
+
 // Used to delete regular files.
 func (node *DfsNode) Unlink(ctx context.Context, name string) syscall.Errno {
 	path := node.PathForFile(name)
@@ -136,7 +140,9 @@ func (node *DfsNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off
 		return nil, syscall.EAGAIN
 	}
 
-	fmt.Println("Returning read", result.Buffer, "with code", result.ErrorStatus.Code)
+	println("Read bytes:", result.Buffer)
+	println("Storage server response:", result.ErrorStatus.String())
+
 	return fuse.ReadResultData(result.Buffer), syscall.Errno(result.ErrorStatus.Code)
 }
 
@@ -169,6 +175,8 @@ func (node *DfsNode) Write(ctx context.Context, f fs.FileHandle, data []byte, of
 		println("error occurred during write:", err.Error())
 		return 0, syscall.EAGAIN
 	}
+
+	println("Storage server response:", result.ErrorStatus.String())
 
 	return uint32(len(data)), syscall.Errno(result.ErrorStatus.Code)
 }

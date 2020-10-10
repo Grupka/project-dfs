@@ -3,3 +3,4 @@ NamingServer
 StorageServer
 run
 
+/client/fuse/main/mnt_point/
