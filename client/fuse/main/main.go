@@ -6,10 +6,9 @@ import (
 	"os"
 	"project-dfs/client"
 	"project-dfs/client/fuse"
-	"testing"
 )
 
-func TestMount(t *testing.T) {
+func main() {
 	namingServerAddress, ok := os.LookupEnv("NAMING_SERVER_ADDRESS")
 	if !ok {
 		namingServerAddress = "localhost:5678"

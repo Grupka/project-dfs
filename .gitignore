@@ -1,6 +1,7 @@
 .idea
 NamingServer
 StorageServer
+Client
 run
 
 /client/fuse/main/mnt_point/
