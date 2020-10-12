@@ -53,8 +53,6 @@ func (n *Node) GetChild(name string) *Node {
 }
 
 func (n *Node) RemoveChild(name string) {
-	fmt.Println("RemoveChild before:", n.GetChildrenNames())
-
 	index := -1
 	for i, child := range n.Children {
 		if child.Name == name {
@@ -66,13 +64,10 @@ func (n *Node) RemoveChild(name string) {
 		return
 	}
 	n.Children = append(n.Children[:index], n.Children[index+1:]...)
-	fmt.Println("RemoveChild after:", n.GetChildrenNames())
 }
 
 func (n *Node) AddChild(node *Node) {
-	fmt.Println("AddChild before:", n.GetChildrenNames())
 	n.Children = append(n.Children, node)
-	fmt.Println("AddChild after:", n.GetChildrenNames())
 }
 
 func NewNode(name string, t NodeType) *Node {

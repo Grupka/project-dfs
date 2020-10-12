@@ -30,10 +30,10 @@ func (node *DfsNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.Att
 	out.Size = 0
 
 	// Find the appropriate storage server
-	opClient := node.Client.GetStorageServerForPath(path)
+	opClients := node.Client.GetStorageServersForPath(path)
 
-	if opClient == nil {
-		println("getattr: no storage server found for", path)
+	if len(opClients) == 0 {
+		println("getattr: no storage servers found for", path)
 		println("returning zero file size")
 
 		return 0
@@ -44,16 +44,22 @@ func (node *DfsNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.Att
 	info := pb.GetFileInfoArgs{
 		Path: node.Path(),
 	}
-	result, err := opClient.GetFileInfo(ctx, &info)
-	if err != nil {
-		println("error occurred during getattr:", err.Error())
-		return syscall.EAGAIN
+
+	for _, client := range opClients {
+		result, err := client.GetFileInfo(ctx, &info)
+		if err != nil {
+			println("error occurred during getattr:", err.Error())
+			continue
+		}
+
+		// Update the filesize
+		out.Size = result.FileSize
+
+		return 0
 	}
 
-	// Update the filesize
-	out.Size = result.FileSize
-
-	return 0
+	println("WARNING: completely failed getattr")
+	return 1
 }
 
 func (node *DfsNode) Setattr(ctx context.Context, f fs.FileHandle, in *fuse.SetAttrIn, out *fuse.AttrOut) syscall.Errno {
@@ -121,10 +127,9 @@ func (node *DfsNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off
 	fmt.Println("Read: path:", path)
 
 	// Find the appropriate storage server
-	opClient := node.Client.GetStorageServerForPath(path)
-
-	if opClient == nil {
-		println("read: no storage server found for", path)
+	opClients := node.Client.GetStorageServersForPath(path)
+	if len(opClients) == 0 {
+		println("read: no storage servers found for", path)
 		return nil, syscall.ENOENT
 	}
 
@@ -134,16 +139,21 @@ func (node *DfsNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off
 		Count:  int64(len(dest)),
 	}
 
-	result, err := opClient.ReadFile(ctx, &info)
-	if err != nil {
-		println("error occurred during read:", err.Error())
-		return nil, syscall.EAGAIN
+	for _, client := range opClients {
+		result, err := client.ReadFile(ctx, &info)
+		if err != nil {
+			println("error occurred during read:", err.Error())
+			continue
+		}
+
+		println("Read bytes:", result.Buffer)
+		println("Storage server response:", result.ErrorStatus.String())
+
+		return fuse.ReadResultData(result.Buffer), syscall.Errno(result.ErrorStatus.Code)
 	}
 
-	println("Read bytes:", result.Buffer)
-	println("Storage server response:", result.ErrorStatus.String())
-
-	return fuse.ReadResultData(result.Buffer), syscall.Errno(result.ErrorStatus.Code)
+	println("WARNING: completely failed read")
+	return nil, 1
 }
 
 // Writes to a handle. In our case, simply forwards call to the node.
@@ -157,9 +167,9 @@ func (node *DfsNode) Write(ctx context.Context, f fs.FileHandle, data []byte, of
 	fmt.Println("Write: path:", path)
 
 	// Find the appropriate storage server
-	opClient := node.Client.GetStorageServerForPath(path)
+	opClients := node.Client.GetStorageServersForPath(path)
 
-	if opClient == nil {
+	if len(opClients) == 0 {
 		println("write: no storage server found for", path)
 		return 0, syscall.ENOENT
 	}
@@ -171,15 +181,20 @@ func (node *DfsNode) Write(ctx context.Context, f fs.FileHandle, data []byte, of
 		IsChainCall: false,
 	}
 
-	result, err := opClient.WriteFile(ctx, &info)
-	if err != nil {
-		println("error occurred during write:", err.Error())
-		return 0, syscall.EAGAIN
+	for _, client := range opClients {
+		result, err := client.WriteFile(ctx, &info)
+		if err != nil {
+			println("error occurred during write:", err.Error())
+			continue
+		}
+
+		println("Storage server response:", result.ErrorStatus.String())
+
+		return uint32(len(data)), syscall.Errno(result.ErrorStatus.Code)
 	}
 
-	println("Storage server response:", result.ErrorStatus.String())
-
-	return uint32(len(data)), syscall.Errno(result.ErrorStatus.Code)
+	println("WARNING: completely failed write")
+	return 0, 1
 }
 
 //=== Directories part ===//

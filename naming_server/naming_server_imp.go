@@ -64,12 +64,10 @@ func (ctlr *NamingServerController) Discover(ctx context.Context, request *pb.Di
 				PublicAddress: info.publicAddress,
 			})
 		}
-		fmt.Println("Returning storages:", storages)
 		return &pb.DiscoverResponse{StorageInfo: storages}, nil
 	}
 
 	node, ok := ctlr.Server.FindNode(request.Path)
-	fmt.Println("Storages after FindNode:", node.Storages)
 	if !ok {
 		fmt.Println("Node not found! Returning empty list")
 		return &pb.DiscoverResponse{
@@ -79,11 +77,9 @@ func (ctlr *NamingServerController) Discover(ctx context.Context, request *pb.Di
 
 	for _, storage := range node.Storages {
 		if request.GetExcludeStorageName() == storage.Alias {
-			fmt.Println("Skipping excluded storage", storage.Alias)
 			continue
 		}
 
-		fmt.Println("Appending storage", storage.Alias)
 		info := ctlr.Server.StorageAddresses[storage.Alias]
 		storages = append(storages, &pb.DiscoveredStorage{
 			Alias:         storage.Alias,
@@ -120,15 +116,11 @@ func (ctlr *NamingServerController) CreateFile(ctx context.Context, request *pb.
 		response, err := server.CreateFile(ctx, &pb.CreateFileArgs{Path: request.Path})
 		if err != nil {
 			println("Error creating file:", err.Error())
-			return nil, err
+			continue
 		}
 		if response.ErrorStatus.Code != 0 {
 			println("Error during file creation:", response.ErrorStatus.Description)
-			return &pb.CreateFileResponse{
-				ErrorStatus: &pb.ErrorStatus{
-					Code:        response.ErrorStatus.Code,
-					Description: response.ErrorStatus.Description,
-				}}, nil
+			continue
 		}
 		node.Storages = append(node.Storages, &StorageInfo{Alias: s.Alias})
 		fmt.Println("Storage", s.Alias, "added to node", node.Name)

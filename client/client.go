@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"google.golang.org/grpc"
-	"math/rand"
 	"project-dfs/pb"
 )
 
@@ -19,7 +18,7 @@ func NewClient(conn grpc.ClientConnInterface) *Client {
 	}
 }
 
-func (client *Client) GetStorageServerForPath(path string) pb.StorageClient {
+func (client *Client) GetStorageServersForPath(path string) []pb.StorageClient {
 	discoverResponse, err := client.NamingServerClient.Discover(context.Background(), &pb.DiscoverRequest{
 		Path: path,
 	})
@@ -31,9 +30,13 @@ func (client *Client) GetStorageServerForPath(path string) pb.StorageClient {
 		println("No storage servers for path \"" + path + "\" found")
 		return nil
 	}
-	randomIndex := rand.Intn(len(discoverResponse.StorageInfo))
-	address := discoverResponse.StorageInfo[randomIndex].PublicAddress
-	return client.GetStorageServerByAddress(address)
+	//randomIndex := rand.Intn(len(discoverResponse.StorageInfo))
+	//address := discoverResponse.StorageInfo[randomIndex].PublicAddress
+	var servers []pb.StorageClient
+	for _, storage := range discoverResponse.StorageInfo {
+		servers = append(servers, client.GetStorageServerByAddress(storage.PublicAddress))
+	}
+	return servers
 }
 
 func (client *Client) GetStorageServerByAddress(address string) pb.StorageClient {
