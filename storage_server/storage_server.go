@@ -104,36 +104,105 @@ func CheckError(err error) {
 }
 
 func Run() {
-	metadata := initStorageServer()
+	server := initStorageServer()
 
-	fmt.Printf("Initialized storage metadata: %+v\n", metadata)
+	fmt.Printf("Initialized storage metadata: %+v\n", server)
 
-	fmt.Println("Connecting to naming server at", metadata.NamingServerAddress)
-	conn, err := grpc.Dial(metadata.NamingServerAddress, grpc.WithInsecure())
+	fmt.Println("Connecting to naming server at", server.NamingServerAddress)
+	conn, err := grpc.Dial(server.NamingServerAddress, grpc.WithInsecure())
 	CheckError(err)
 
-	port, _ := strconv.Atoi(metadata.LocalAddress[strings.LastIndex(metadata.LocalAddress, ":")+1:])
+	port, _ := strconv.Atoi(server.LocalAddress[strings.LastIndex(server.LocalAddress, ":")+1:])
 
 	newServer := pb.NewNamingClient(conn)
 	response, err := newServer.Register(context.Background(), &pb.RegRequest{
-		ServerAlias:    metadata.Alias,
+		ServerAlias:    server.Alias,
 		Port:           uint32(port),
-		PublicHostname: metadata.PublicHostname,
+		PublicHostname: server.PublicHostname,
 	})
 	CheckError(err)
 	log.Printf("Response from naming server: %s", response.GetStatus())
 
 	if response.GetStatus().String() == "ACCEPT" {
 		// listen to connections
-		listener, err := net.Listen("tcp", metadata.LocalAddress)
+		listener, err := net.Listen("tcp", server.LocalAddress)
 		CheckError(err)
-		println("Listening on " + metadata.LocalAddress)
 
-		storageController := NewStorageServiceController(metadata)
+		fmt.Println("Starting sync of " + server.Alias + "...")
+		server.Sync("")
+		fmt.Println("Sync completed.")
+
+		println("Listening on " + server.LocalAddress)
+		storageController := NewStorageServiceController(server)
 		grpcServer := grpc.NewServer()
 		pb.RegisterStorageServer(grpcServer, storageController)
 		err = grpcServer.Serve(listener)
 		CheckError(err)
 	}
+}
 
+func (server *StorageServer) Sync(path string) {
+	fmt.Println("Syncing directory", path)
+
+	response, err := server.GetNamingClient().ListDirectory(context.Background(), &pb.ListDirectoryRequest{Path: path})
+	if err != nil {
+		println("Error syncing path", path, ":", err.Error())
+		return
+	}
+
+	fmt.Println(response.Contents)
+
+	for _, content := range response.Contents {
+		if content.Mode == pb.NodeMode_DIRECTORY {
+			// Recursively sync directory
+			server.Sync(path + "/" + content.Name)
+		} else {
+			filePath := path + "/" + content.Name
+			os.MkdirAll(StoragePath+path, 0777)
+
+			discovered, err := server.GetNamingClient().Discover(context.Background(), &pb.DiscoverRequest{
+				Path:               filePath,
+				ExcludeStorageName: server.Alias,
+			})
+			if err != nil {
+				println("Error discovery during sync:", err.Error())
+				continue
+			}
+
+			// Skip syncing if this is the only storage server holding this file
+			if len(discovered.StorageInfo) < 1 {
+				fmt.Println("Not enough storage servers for", filePath)
+				continue
+			}
+
+			fmt.Println("Syncing file", filePath)
+
+			addr := discovered.StorageInfo[0].PublicAddress
+			storageClient := server.GetStorageClient(addr)
+
+			offset := int64(0)
+			for true {
+				read, err := storageClient.ReadFile(context.Background(), &pb.ReadFileArgs{
+					Path:   filePath,
+					Offset: offset,
+					Count:  4096,
+				})
+				if err != nil {
+					println("Error read during sync:", err.Error())
+					break
+				}
+
+				fmt.Println("Writing", read.Buffer)
+
+				fd, _ := os.OpenFile(StoragePath+filePath, os.O_WRONLY, os.ModePerm)
+				fd.WriteAt(read.Buffer, offset)
+				offset += int64(read.Count)
+				fd.Close()
+
+				if read.Count == 0 {
+					break
+				}
+			}
+		}
+	}
 }

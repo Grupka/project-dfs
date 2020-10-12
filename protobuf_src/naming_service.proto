@@ -37,6 +37,7 @@ service Naming {
 
 message DiscoverRequest {
   string path = 1;
+  string excludeStorageName = 2;
 }
 
 message DiscoveredStorage {

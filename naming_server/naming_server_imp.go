@@ -78,6 +78,11 @@ func (ctlr *NamingServerController) Discover(ctx context.Context, request *pb.Di
 	}
 
 	for _, storage := range node.Storages {
+		if request.GetExcludeStorageName() == storage.Alias {
+			fmt.Println("Skipping excluded storage", storage.Alias)
+			continue
+		}
+
 		fmt.Println("Appending storage", storage.Alias)
 		info := ctlr.Server.StorageAddresses[storage.Alias]
 		storages = append(storages, &pb.DiscoveredStorage{
