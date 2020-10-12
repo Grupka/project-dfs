@@ -12,7 +12,7 @@ The language chosen for system's implementation is Go, because it has efficient 
 
 ## Architectural Diagram
 
-![Architecture schema](github.com/Grupka/project-dfs/tree/master/Images/GoStore_Arch_(1).png)
+![Architecture schema](Images/GoStore_Arch_(1).png)
 
 ## Client:
 
