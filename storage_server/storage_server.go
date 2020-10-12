@@ -17,6 +17,7 @@ type StorageServer struct {
 	LocalAddress          string
 	Alias                 string
 	NamingServerAddress   string
+	PublicHostname        string
 	storageAddressesMutex sync.Mutex
 	storageAddresses      map[string]string // key:value = serverAlias:serverAddress
 	namingClient          pb.NamingClient
@@ -70,6 +71,13 @@ func initStorageServer() *StorageServer {
 		fmt.Println("NAMING_SERVER_ADDRESS variable not specified; falling back to", namingServerAddress)
 	}
 
+	// Obtain public hostname from environment
+	publicHostname := os.Getenv("PUBLIC_HOSTNAME")
+	if publicHostname == "" {
+		fmt.Println("PUBLIC_HOSTNAME variable not specified; aborting")
+		os.Exit(1)
+	}
+
 	// Obtain alias from environment
 	alias := os.Getenv("ALIAS")
 	if alias == "" {
@@ -81,6 +89,7 @@ func initStorageServer() *StorageServer {
 		LocalAddress:          localAddress,
 		Alias:                 alias,
 		NamingServerAddress:   namingServerAddress,
+		PublicHostname:        publicHostname,
 		storageAddressesMutex: sync.Mutex{},
 		storageAddresses:      make(map[string]string),
 		storageClients:        map[string]pb.StorageClient{},
@@ -106,8 +115,11 @@ func Run() {
 	port, _ := strconv.Atoi(metadata.LocalAddress[strings.LastIndex(metadata.LocalAddress, ":")+1:])
 
 	newServer := pb.NewNamingClient(conn)
-	response, err := newServer.Register(context.Background(),
-		&pb.RegRequest{ServerAlias: metadata.Alias, Port: uint32(port)})
+	response, err := newServer.Register(context.Background(), &pb.RegRequest{
+		ServerAlias:    metadata.Alias,
+		Port:           uint32(port),
+		PublicHostname: metadata.PublicHostname,
+	})
 	CheckError(err)
 	log.Printf("Response from naming server: %s", response.GetStatus())
 

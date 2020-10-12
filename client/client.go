@@ -32,7 +32,7 @@ func (client *Client) GetStorageServerForPath(path string) pb.StorageClient {
 		return nil
 	}
 	randomIndex := rand.Intn(len(discoverResponse.StorageInfo))
-	address := discoverResponse.StorageInfo[randomIndex].Address
+	address := discoverResponse.StorageInfo[randomIndex].PublicAddress
 	return client.GetStorageServerByAddress(address)
 }
 

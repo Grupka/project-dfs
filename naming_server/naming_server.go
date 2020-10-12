@@ -143,24 +143,41 @@ func (server *NamingServer) CreateNodeIfNotExists(path string, lastNodeIsFile bo
 	return node
 }
 
+type StorageServerInfo struct {
+	privateAddress string
+	publicAddress  string
+}
+
 type NamingServer struct {
 	storageAddressesMutex sync.Mutex
-	StorageAddresses      map[string]string // key:value = serverAlias:serverAddress
+	StorageAddresses      map[string]*StorageServerInfo // key:value = serverAlias:serverAddress
 	LocalAddress          string
 	RootIndexNode         *Node
 	StorageServers        map[string]pb.StorageClient
 }
 
-func (server *NamingServer) SetAddressMap(newKey string, newValue string) {
+func (server *NamingServer) SetAddressMap(newKey string, newValue *StorageServerInfo) {
 	server.storageAddressesMutex.Lock()
 	defer server.storageAddressesMutex.Unlock()
 	server.StorageAddresses[newKey] = newValue
 }
 
+func StorageServerInfoKeys(m map[string]*StorageServerInfo) []string {
+	keys := make([]string, len(m))
+
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+
+	return keys
+}
+
 // Returns 2 random storage servers. That's it.
 func (server *NamingServer) Get2RandomStorageServers() []*pb.DiscoveredStorage {
 	servers := server.StorageAddresses
-	keys := utils.Keys(servers)
+	keys := StorageServerInfoKeys(servers)
 	var result []*pb.DiscoveredStorage
 
 	var aliases []string
@@ -177,11 +194,12 @@ func (server *NamingServer) Get2RandomStorageServers() []*pb.DiscoveredStorage {
 	}
 
 	for _, alias := range aliases {
-		address := servers[alias]
+		serverInfo := servers[alias]
 
 		result = append(result, &pb.DiscoveredStorage{
-			Alias:   alias,
-			Address: address,
+			Alias:         alias,
+			Address:       serverInfo.privateAddress,
+			PublicAddress: serverInfo.publicAddress,
 		})
 	}
 
@@ -217,7 +235,7 @@ func initNamingServer() *NamingServer {
 
 	return &NamingServer{
 		storageAddressesMutex: sync.Mutex{},
-		StorageAddresses:      make(map[string]string),
+		StorageAddresses:      make(map[string]*StorageServerInfo),
 		LocalAddress:          address,
 		RootIndexNode:         rootNode,
 		StorageServers:        make(map[string]pb.StorageClient),

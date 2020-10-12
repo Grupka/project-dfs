@@ -42,6 +42,7 @@ message DiscoverRequest {
 message DiscoveredStorage {
   string alias = 1;
   string address = 2;
+  string publicAddress = 3;
 }
 
 message DiscoverResponse {
@@ -74,6 +75,7 @@ message CopyResponse {
 message RegRequest {
   string serverAlias = 1;
   uint32 port = 2;
+  string publicHostname = 3;
 }
 
 enum Status {

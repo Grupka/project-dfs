@@ -41,7 +41,10 @@ func (ctlr *NamingServerController) Register(ctx context.Context, request *pb.Re
 	// Add remote port
 	peerAddress += ":" + strconv.Itoa(int(request.Port))
 
-	ctlr.Server.SetAddressMap(request.ServerAlias, peerAddress)
+	ctlr.Server.SetAddressMap(request.ServerAlias, &StorageServerInfo{
+		privateAddress: peerAddress,
+		publicAddress:  request.PublicHostname + ":" + strconv.Itoa(int(request.Port)),
+	})
 
 	return &pb.RegResponse{Status: pb.Status_ACCEPT}, nil
 }
@@ -54,10 +57,11 @@ func (ctlr *NamingServerController) Discover(ctx context.Context, request *pb.Di
 
 	// if path == "" return ALL storage servers
 	if request.Path == "" {
-		for alias, address := range ctlr.Server.StorageAddresses {
+		for alias, info := range ctlr.Server.StorageAddresses {
 			storages = append(storages, &pb.DiscoveredStorage{
-				Alias:   alias,
-				Address: address,
+				Alias:         alias,
+				Address:       info.privateAddress,
+				PublicAddress: info.publicAddress,
 			})
 		}
 		fmt.Println("Returning storages:", storages)
@@ -75,9 +79,11 @@ func (ctlr *NamingServerController) Discover(ctx context.Context, request *pb.Di
 
 	for _, storage := range node.Storages {
 		fmt.Println("Appending storage", storage.Alias)
+		info := ctlr.Server.StorageAddresses[storage.Alias]
 		storages = append(storages, &pb.DiscoveredStorage{
-			Alias:   storage.Alias,
-			Address: ctlr.Server.StorageAddresses[storage.Alias],
+			Alias:         storage.Alias,
+			Address:       info.privateAddress,
+			PublicAddress: info.publicAddress,
 		})
 	}
 
@@ -158,7 +164,8 @@ func (ctlr *NamingServerController) Move(ctx context.Context, request *pb.MoveRe
 	newParent.AddChild(node)
 
 	for _, storage := range node.Storages {
-		ss := ctlr.Server.GetStorageServer(ctlr.Server.StorageAddresses[storage.Alias])
+		info := ctlr.Server.StorageAddresses[storage.Alias]
+		ss := ctlr.Server.GetStorageServer(info.privateAddress)
 		_, _ = ss.Move(ctx, &pb.MoveArgs{
 			Path:    request.Path,
 			NewPath: request.NewPath,
@@ -192,8 +199,8 @@ func (ctlr *NamingServerController) DeleteFile(ctx context.Context, request *pb.
 	}
 	parent.RemoveChild(utils.NamePart(request.Path))
 
-	for _, address := range ctlr.Server.StorageAddresses {
-		server := ctlr.Server.GetStorageServer(address)
+	for _, info := range ctlr.Server.StorageAddresses {
+		server := ctlr.Server.GetStorageServer(info.privateAddress)
 		server.Remove(ctx, &pb.RemoveArgs{Path: request.Path})
 	}
 
@@ -224,8 +231,8 @@ func (ctlr *NamingServerController) DeleteDirectory(ctx context.Context, request
 	}
 	parent.RemoveChild(utils.NamePart(request.Path))
 
-	for _, address := range ctlr.Server.StorageAddresses {
-		server := ctlr.Server.GetStorageServer(address)
+	for _, info := range ctlr.Server.StorageAddresses {
+		server := ctlr.Server.GetStorageServer(info.privateAddress)
 		server.Remove(ctx, &pb.RemoveArgs{Path: request.Path})
 	}
 

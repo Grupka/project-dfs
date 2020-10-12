@@ -24,11 +24,13 @@ bash -c "sleep 1 && cd run/storage_server_1 \
   && ADDRESS=0.0.0.0:${STORAGE_SERVER_1_PORT} \
      NAMING_SERVER_ADDRESS=${NAMING_SERVER_ADDRESS}:${NAMING_SERVER_PORT} \
      ALIAS=${STORAGE_SERVER_1_ALIAS} \
+     PUBLIC_HOSTNAME=localhost \
      ../../StorageServer" &
 bash -c "sleep 1 && cd run/storage_server_2 \
   && ADDRESS=0.0.0.0:${STORAGE_SERVER_2_PORT} \
      NAMING_SERVER_ADDRESS=${NAMING_SERVER_ADDRESS}:${NAMING_SERVER_PORT} \
      ALIAS=${STORAGE_SERVER_2_ALIAS} \
+     PUBLIC_HOSTNAME=localhost \
      ../../StorageServer" &
 
 echo "Servers started. Type anything to stop. Don't forget to press Return in the end."
