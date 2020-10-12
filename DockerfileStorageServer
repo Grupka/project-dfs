@@ -1,7 +1,6 @@
 FROM golang:1.15.2
 
 ENV GOROOT /usr/local/go
-ENV GOPATH /go/src/project-dfs
 
 RUN go get google.golang.org/grpc
 RUN go get github.com/monmohan/xferspdy
@@ -35,6 +34,9 @@ RUN go get github.com/envoyproxy/protoc-gen-validate
 RUN go get github.com/google/uuid
 RUN go get -u github.com/census-instrumentation/opencensus-proto/...
 RUN go get -u github.com/antlr/antlr4/...
+
+#ENV GOPATH /go/src/project-dfs
+ENV GOPATH /go
 
 WORKDIR /go/src/project-dfs
 COPY . .
